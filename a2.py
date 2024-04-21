@@ -12,40 +12,134 @@ from typing import Optional, Callable
 
 #################################### MODEL #####################################
 class Tile():
-    """docstring for Tile"""
+    """Tile Class"""
     def __init__(self) -> None:
-        """docstring for __init__ method"""
-        pass
+        """Initialises the attributes of the base tile class' objects"""
+        self.tile_repr = f'{TILE_NAME}()'
+        self.tile_str = TILE_SYMBOL
+        self.tile_name = TILE_NAME
+        self.can_block = False
     def __repr__(self) -> str:
-        """docstring for __repr__ method"""
-        pass
+        """Returns a machine readable string that could be used to construct an identical instance of the tile.
+
+        >>>tile = Tile()
+        >>>tile
+        Tile()
+
+        >>>mountain = Mountain()
+        >>>mountain
+        Mountain()
+        """
+        return self.tile_repr
     def __str__(self) -> str:
-        """docstring for __str__ method"""
-        pass
+        """Returns the character representing the type of the tile.
+
+        >>>tile = Tile()
+        >>>str(tile)
+        'T'
+
+        >>>ground = Ground()
+        >>>str(ground)
+        ' '
+        """
+        return self.tile_str
     def get_tile_name(self) -> str:
-        """docstring for get_tile_name method"""
-        pass
+        """Returns the name of the type of the tile.
+
+        >>>tile = Tile()
+        >>>tile.get_tile_name()
+        'Tile'
+
+        >>>mountain = Mountain()
+        >>>mountain.get_tile_name()
+        'Mountain'
+        """
+        return self.tile_name
     def is_blocking(self) -> bool:
-        """docstring for is_blocking method"""
-        pass
+        """Returns True only when the tile is blocking.
+
+        >>>tile = Tile()
+        >>>tile.is_blocking()
+        False
+
+        >>>building = Building(5)
+        >>>building.is_blocking()
+        True
+        """
+        return self.can_block
 
 class Ground(Tile):
-    """docstring for Ground"""
-    
+    """Ground Class"""
+    def __init__(self) -> None:
+        """Initialises the attributes for a ground object"""
+        self.tile_repr = f'{GROUND_NAME}()'
+        self.tile_str = GROUND_SYMBOL
+        self.tile_name = GROUND_NAME
+        self.can_block = False
+
 class Mountain(Tile):
-    """docstring for Mountain"""
+    """Mountain Class"""
+    def __init__(self) -> None:
+        """Initialises the attributes for a Mountain object"""
+        self.tile_repr = f'{MOUNTAIN_NAME}()'
+        self.tile_str = MOUNTAIN_SYMBOL
+        self.tile_name = MOUNTAIN_NAME
+        self.can_block = True
    
 class Building(Tile):
-    """docstring for Building"""
+    """Building Class"""
     def __init__(self, initial_health: int) -> None:
-        """docstring for __init__ method"""
-        pass
+        """Initialises the attributes for a Building object
+
+        Arguments: 
+            The building's initial health when the game starts.
+        """
+        self.tile_repr = f'{BUILDING_NAME}()'
+        self.tile_name = BUILDING_NAME
+        self.can_block = True
+        self.health = initial_health
+        self.tile_str = str(self.health)
     def is_destroyed(self) -> bool:
-        """docstring for is destroyed method"""
-        pass
+        """Returns True only when the building is destroyed, and False if not.
+
+        >>>building = Building(5)
+        >>>building.is_destroyed()
+        False
+
+        >>>building = Building(0)
+        >>>building.is_destroyed()
+        True
+        """
+        return self.health < 1 #building is destroyed when health is below 1
     def damage(self, damage: int) -> None:
-        """docstring for damage method"""
-        pass
+        """Reduces the health of the building by the amount specified. Do nothing is the building is already destroyed.
+
+        Arguments: 
+            The amount of damage dealt to the building.
+
+        >>>building = Building(5)
+        >>>str(building)
+        '5'
+        >>>building.damage(-10)
+        >>>str(building)
+        '9'
+        >>>building.damage(2)
+        >>>str(building)
+        '7'
+        >>>building.damage(15)
+        >>>str(building)
+        '0'
+        >>>building.damage(-3)
+        >>>str(building)
+        '0'
+        """
+        if not self.is_destroyed():
+            self.health -= damage
+            if self.health < 0:
+                self.health = 0
+            elif self.health > 9:
+                self.health = 9
+            self.tile_str = str(self.health)
 
 class Board():
     """docstring for Board"""
