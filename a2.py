@@ -94,10 +94,10 @@ class Building(Tile):
         Arguments: 
             The building's initial health when the game starts.
         """
-        self.tile_repr = f'{BUILDING_NAME}()'
+        self.tile_repr = f'{BUILDING_NAME}({initial_health})'
         self.tile_name = BUILDING_NAME
-        self.can_block = True
         self.health = initial_health
+        self.can_block = self.health > 1 #can block if not destroyed
         self.tile_str = str(self.health)
     def is_destroyed(self) -> bool:
         """Returns True only when the building is destroyed, and False if not.
@@ -110,6 +110,7 @@ class Building(Tile):
         >>>building.is_destroyed()
         True
         """
+        self.can_block = self.health > 1 
         return self.health < 1 #building is destroyed when health is below 1
     def damage(self, damage: int) -> None:
         """Reduces the health of the building by the amount specified. Do nothing is the building is already destroyed.
