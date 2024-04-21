@@ -1,5 +1,4 @@
 # DO NOT modify or add any import statements
-#test
 from a2_support import *
 import tkinter as tk
 from tkinter import messagebox, filedialog
@@ -233,7 +232,7 @@ class SideBar(AbstractGrid):
     ) -> None:
         """docstring"""
         pass
-    def display(self, entities: list[entity]) -> None:
+    def display(self, entities: list[Entity]) -> None:
         """docstring"""
         pass
 
