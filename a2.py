@@ -309,8 +309,8 @@ class Mech(Entity):
     speed: int, 
     strength: int
     ) -> None:
-    """docstring"""
-    super().__init__(self, position, initial_health, speed, strength)
+        """docstring"""
+    #super().__init__(self, position, initial_health, speed, strength)
 
     def enable(self) -> None:
         """docstring"""
