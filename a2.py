@@ -134,7 +134,7 @@ class Building(Tile):
         >>>str(building)
         '0'
         """
-        if not self._is_destroyed():
+        if not self.is_destroyed():
             self._health -= damage
             if self._health < 0:
                 self._health = 0
@@ -229,7 +229,7 @@ class Board():
         for row_i, row in enumerate(self._board):
             for column_i, column in enumerate(row):
                 if column.isdigit():
-                    self._building_dictionary[(row_i, column_i)] = self._get_tile((row_i, column_i))
+                    self._building_dictionary[(row_i, column_i)] = self.get_tile((row_i, column_i))
         return self._building_dictionary
 
 class Entity():
@@ -250,7 +250,7 @@ class Entity():
         self._entity_name = ENTITY_NAME
         self._entity_symbol = ENTITY_SYMBOL
         self._entity_repr = f'{ENTITY_NAME}({position}, {initial_health}, {speed}, {strength})'
-        self._entity_str = f'{ENTITY_SYMBOL}, {self._position[0]}, {self._position[1]} {self._health}, {speed}, {strength}'
+        self._entity_str = f'{ENTITY_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{speed},{strength}'
     def __repr__(self) -> str:
         """docstring"""
         return self._entity_repr
@@ -269,7 +269,7 @@ class Entity():
     def set_position(self, position: tuple[int, int]) -> None:
         """docstring"""
         self._position = position
-        self._entity_str = f'{ENTITY_SYMBOL}, {self._position[0]}, {self._position[1]} {self._health}, {speed}, {strength}'
+        self._entity_str = f'{ENTITY_SYMBOL}, {self._position[0]}, {self._position[1]} {self._health}, {self._speed}, {self._strength}'
     def get_health(self) -> int:
         """docstring"""
         return self._health
@@ -282,7 +282,7 @@ class Entity():
     def damage(self, damage: int) -> None:
         """docstring"""
         self._health -= damage
-        if self._is_alive():
+        if self.is_alive():
             if self._health < 0:
                 self._health = 0
             self._entity_str = f'{ENTITY_SYMBOL}, {self._position[0]}, {self._position[1]} {self._health}, {speed}, {strength}'
