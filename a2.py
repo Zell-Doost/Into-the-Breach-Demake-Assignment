@@ -15,10 +15,10 @@ class Tile():
     """Tile Class"""
     def __init__(self) -> None:
         """Initialises the attributes of the base tile class' objects"""
-        self.tile_repr = f'{TILE_NAME}()'
-        self.tile_str = TILE_SYMBOL
-        self.tile_name = TILE_NAME
-        self.can_block = False
+        self._tile_repr = f'{TILE_NAME}()'
+        self._tile_str = TILE_SYMBOL
+        self._tile_name = TILE_NAME
+        self._can_block = False
     def __repr__(self) -> str:
         """Returns a machine readable string that could be used to construct an identical instance of the tile.
 
@@ -30,7 +30,7 @@ class Tile():
         >>>mountain
         Mountain()
         """
-        return self.tile_repr
+        return self._tile_repr
     def __str__(self) -> str:
         """Returns the character representing the type of the tile.
 
@@ -42,7 +42,7 @@ class Tile():
         >>>str(ground)
         ' '
         """
-        return self.tile_str
+        return self._tile_str
     def get_tile_name(self) -> str:
         """Returns the name of the type of the tile.
 
@@ -54,7 +54,7 @@ class Tile():
         >>>mountain.get_tile_name()
         'Mountain'
         """
-        return self.tile_name
+        return self._tile_name
     def is_blocking(self) -> bool:
         """Returns True only when the tile is blocking.
 
@@ -66,25 +66,25 @@ class Tile():
         >>>building.is_blocking()
         True
         """
-        return self.can_block
+        return self._can_block
 
 class Ground(Tile):
     """Ground Class"""
     def __init__(self) -> None:
         """Initialises the attributes for a ground object"""
-        self.tile_repr = f'{GROUND_NAME}()'
-        self.tile_str = GROUND_SYMBOL
-        self.tile_name = GROUND_NAME
-        self.can_block = False
+        self._tile_repr = f'{GROUND_NAME}()'
+        self._tile_str = GROUND_SYMBOL
+        self._tile_name = GROUND_NAME
+        self._can_block = False
 
 class Mountain(Tile):
     """Mountain Class"""
     def __init__(self) -> None:
         """Initialises the attributes for a Mountain object"""
-        self.tile_repr = f'{MOUNTAIN_NAME}()'
-        self.tile_str = MOUNTAIN_SYMBOL
-        self.tile_name = MOUNTAIN_NAME
-        self.can_block = True
+        self._tile_repr = f'{MOUNTAIN_NAME}()'
+        self._tile_str = MOUNTAIN_SYMBOL
+        self._tile_name = MOUNTAIN_NAME
+        self._can_block = True
    
 class Building(Tile):
     """Building Class"""
@@ -94,11 +94,11 @@ class Building(Tile):
         Arguments: 
             The building's initial health when the game starts.
         """
-        self.tile_repr = f'{BUILDING_NAME}({initial_health})'
-        self.tile_name = BUILDING_NAME
-        self.health = initial_health
-        self.can_block = self.health > 1 #can block if not destroyed
-        self.tile_str = str(self.health)
+        self._tile_repr = f'{BUILDING_NAME}({initial_health})'
+        self._tile_name = BUILDING_NAME
+        self._health = initial_health
+        self._can_block = self._health > 1 #can block if not destroyed
+        self._tile_str = str(self._health)
     def is_destroyed(self) -> bool:
         """Returns True only when the building is destroyed, and False if not.
 
@@ -110,8 +110,8 @@ class Building(Tile):
         >>>building.is_destroyed()
         True
         """
-        self.can_block = self.health > 1 
-        return self.health < 1 #building is destroyed when health is below 1
+        self._can_block = self._health > 1 
+        return self._health < 1 #building is destroyed when health is below 1
     def damage(self, damage: int) -> None:
         """Reduces the health of the building by the amount specified. Do nothing is the building is already destroyed.
 
@@ -134,13 +134,13 @@ class Building(Tile):
         >>>str(building)
         '0'
         """
-        if not self.is_destroyed():
-            self.health -= damage
-            if self.health < 0:
-                self.health = 0
-            elif self.health > 9:
-                self.health = 9
-            self.tile_str = str(self.health)
+        if not self._is_destroyed():
+            self._health -= damage
+            if self._health < 0:
+                self._health = 0
+            elif self._health > 9:
+                self._health = 9
+            self._tile_str = str(self._health)
 
 class Board():
     """Board Class"""
@@ -154,17 +154,17 @@ class Board():
             Board array will have at least one row.
             Each character on the board will be a string representation provided by the previous classes.
         """
-        self.board = board
-        self.board_object_dictionary = {TILE_SYMBOL: Tile(), GROUND_SYMBOL: Ground(), MOUNTAIN_SYMBOL: Mountain()}
-        self.object_board = []
-        for row_i, row in enumerate(self.board):
-            self.object_board.append([])
+        self._board = board
+        self._board_object_dictionary = {TILE_SYMBOL: Tile(), GROUND_SYMBOL: Ground(), MOUNTAIN_SYMBOL: Mountain()}
+        self._object_board = []
+        for row_i, row in enumerate(self._board):
+            self._object_board.append([])
             for j in row:
                 if j.isdigit():
-                    self.object_board[row_i].append(Building(int(j)))
+                    self._object_board[row_i].append(Building(int(j)))
                 else:
-                    self.object_board[row_i].append(self.board_object_dictionary[j])
-        self.board_repr = f'Board({board})'
+                    self._object_board[row_i].append(self._board_object_dictionary[j])
+        self._board_repr = f'Board({board})'
     def __repr__(self):
         """Returns a machine readable string that could be used to construct an identical instance of the board.
 
@@ -173,7 +173,7 @@ class Board():
         >>>board
         Board([[' ', '4'], ['6', 'M']])
         """
-        return self.board_repr
+        return self._board_repr
     def __str__(self) -> str:
         """Returns a string representation of the board.
         
@@ -185,13 +185,13 @@ class Board():
         >>>str(board)
         ' 4\n6M'
         """
-        self.board_str = ""
-        for k, i in enumerate(self.board):
+        self._board_str = ""
+        for k, i in enumerate(self._board):
             for j in i:
-                self.board_str += j
-            if k < len(self.board)-1:
-                self.board_str += "\n"
-        return self.board_str
+                self._board_str += j
+            if k < len(self._board)-1:
+                self._board_str += "\n"
+        return self._board_str
     def get_dimensions(self) -> tuple[int, int]:
         """Returns the (#rows, #columns) dimensions of the board.
         Preconditions:
@@ -202,7 +202,7 @@ class Board():
         >>>board.get_dimensions()
         (2, 2)
         """
-        return len(self.board), len(self.board[0])
+        return len(self._board), len(self._board[0])
     def get_tile(self, position: tuple[int, int]) -> Tile:
         """Returns the Tile instance located at the given position.
         Arguments:
@@ -216,7 +216,7 @@ class Board():
         Building(4)
         """
         
-        return self.object_board[position[0]][position[1]]
+        return self._object_board[position[0]][position[1]]
     def get_buildings(self) -> dict[tuple[int, int], Building]:
         """Returns a dictionary mapping the positions of buildings to the building instances at those positions.
         
@@ -225,15 +225,15 @@ class Board():
         >>>board.get_buildings()
         {(0, 1): Building(4), (1, 0): Building(6)}
         """
-        self.building_dictionary = dict()
-        for row_i, row in enumerate(self.board):
+        self._building_dictionary = dict()
+        for row_i, row in enumerate(self._board):
             for column_i, column in enumerate(row):
                 if column.isdigit():
-                    self.building_dictionary[(row_i, column_i)] = self.get_tile((row_i, column_i))
-        return self.building_dictionary
+                    self._building_dictionary[(row_i, column_i)] = self._get_tile((row_i, column_i))
+        return self._building_dictionary
 
 class Entity():
-    """docstring for Entity"""
+    """Entity Class"""
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -241,53 +241,77 @@ class Entity():
     speed: int, 
     strength: int
     ) -> None:
-        """docstring"""
-        pass
+        """Initialises an object from the entity class as well as all of it's children"""
+        self._position = position
+        self._health = initial_health
+        self._speed = speed
+        self._strength = strength
+        self._friendly = False
+        self._entity_name = ENTITY_NAME
+        self._entity_symbol = ENTITY_SYMBOL
+        self._entity_repr = f'{ENTITY_NAME}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{ENTITY_SYMBOL}, {self._position[0]}, {self._position[1]} {self._health}, {speed}, {strength}'
     def __repr__(self) -> str:
         """docstring"""
-        pass
+        return self._entity_repr
     def __str__(self) -> str:
         """docstring"""
-        pass
+        return self._entity_str
     def get_symbol(self) -> str:
         """docstring"""
-        pass
+        return self._entity_symbol
     def get_name(self) -> str:
         """docstring"""
-        pass
+        return self._entity_name
     def get_position(self) -> tuple[int, int]:
         """docstring"""
-        pass
+        return self._position
     def set_position(self, position: tuple[int, int]) -> None:
         """docstring"""
-        pass
+        self._position = position
+        self._entity_str = f'{ENTITY_SYMBOL}, {self._position[0]}, {self._position[1]} {self._health}, {speed}, {strength}'
     def get_health(self) -> int:
         """docstring"""
-        pass
+        return self._health
     def get_speed(self) -> int:
         """docstring"""
-        pass
+        return self._speed
     def get_strength(self) -> int:
         """docstring"""
-        pass
-    def damage(self, daage: int) -> None:
+        return self._strength
+    def damage(self, damage: int) -> None:
         """docstring"""
-        pass
+        self._health -= damage
+        if self._is_alive():
+            if self._health < 0:
+                self._health = 0
+            self._entity_str = f'{ENTITY_SYMBOL}, {self._position[0]}, {self._position[1]} {self._health}, {speed}, {strength}'
     def is_alive(self) -> bool:
         """docstring"""
-        pass
+        return self._health > 0
     def is_friendly(self) -> bool:
         """docstring"""
-        pass
+        return self._friendly
     def get_targets(self) -> list[tuple[int, int]]:
         """docstring"""
-        pass
+        targets = [(self._position[0]-1, self.position[1]), (self._position[0]+1, self.position[1]), (self._position[0], self.position[1]-1), (self._position[0], self.position[1]+1)]
+        return targets
     def attack(self, entity: "Entity") -> None:
         """docstring"""
-        pass
+        entity.damage(self._strength)
 
 class Mech(Entity):
     """docstring for Mech"""
+    def __init__(
+    self, 
+    position: tuple[int, int], 
+    initial_health: int, 
+    speed: int, 
+    strength: int
+    ) -> None:
+    """docstring"""
+    super().__init__(self, position, initial_health, speed, strength)
+
     def enable(self) -> None:
         """docstring"""
         pass
