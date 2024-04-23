@@ -269,7 +269,7 @@ class Entity():
     def set_position(self, position: tuple[int, int]) -> None:
         """docstring"""
         self._position = position
-        self._entity_str = f'{ENTITY_SYMBOL}, {self._position[0]}, {self._position[1]} {self._health}, {self._speed}, {self._strength}'
+        self._entity_str = f'{ENTITY_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
     def get_health(self) -> int:
         """docstring"""
         return self._health
@@ -281,11 +281,11 @@ class Entity():
         return self._strength
     def damage(self, damage: int) -> None:
         """docstring"""
-        self._health -= damage
         if self.is_alive():
+            self._health -= damage
             if self._health < 0:
                 self._health = 0
-            self._entity_str = f'{ENTITY_SYMBOL}, {self._position[0]}, {self._position[1]} {self._health}, {speed}, {strength}'
+            self._entity_str = f'{ENTITY_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
     def is_alive(self) -> bool:
         """docstring"""
         return self._health > 0
@@ -294,7 +294,7 @@ class Entity():
         return self._friendly
     def get_targets(self) -> list[tuple[int, int]]:
         """docstring"""
-        targets = [(self._position[0]-1, self.position[1]), (self._position[0]+1, self.position[1]), (self._position[0], self.position[1]-1), (self._position[0], self.position[1]+1)]
+        targets = [(self._position[0]-1, self._position[1]), (self._position[0]+1, self._position[1]), (self._position[0], self._position[1]-1), (self._position[0], self._position[1]+1)]
         return targets
     def attack(self, entity: "Entity") -> None:
         """docstring"""
