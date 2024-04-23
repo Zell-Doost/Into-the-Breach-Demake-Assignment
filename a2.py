@@ -143,24 +143,94 @@ class Building(Tile):
             self.tile_str = str(self.health)
 
 class Board():
-    """docstring for Board"""
+    """Board Class"""
     def __init__(self, board: list[list[str]]) -> None:
-        """docstring for __init__ method"""
-        pass
+        """Initialises the attributes for a Board object
+        
+        Arguments:
+            The board state through a 2d list with strings.
+        Preconditions:
+            Each row on the board will have the same length.
+            Board array will have at least one row.
+            Each character on the board will be a string representation provided by the previous classes.
+        """
+        self.board = board
+        self.board_object_dictionary = {TILE_SYMBOL: Tile(), GROUND_SYMBOL: Ground(), MOUNTAIN_SYMBOL: Mountain()}
+        self.object_board = []
+        for row_i, row in enumerate(self.board):
+            self.object_board.append([])
+            for j in row:
+                if j.isdigit():
+                    self.object_board[row_i].append(Building(int(j)))
+                else:
+                    self.object_board[row_i].append(self.board_object_dictionary[j])
+        self.board_repr = f'Board({board})'
     def __repr__(self):
-        """docstring for __repr__ method"""
+        """Returns a machine readable string that could be used to construct an identical instance of the board.
+
+        >>>tiles = [[" ", "4"], ["6", "M"]]
+        >>>board = Board(tiles)
+        >>>board
+        Board([[' ', '4'], ['6', 'M']])
+        """
+        return self.board_repr
     def __str__(self) -> str:
-        """docstring for __str__ method"""
-        pass
+        """Returns a string representation of the board.
+        
+        Returns:
+            The board, with a new line when the next row on the board is reached.
+
+        >>>tiles = [[" ", "4"], ["6", "M"]]
+        >>>board = Board(tiles)
+        >>>str(board)
+        ' 4\n6M'
+        """
+        self.board_str = ""
+        for k, i in enumerate(self.board):
+            for j in i:
+                self.board_str += j
+            if k < len(self.board)-1:
+                self.board_str += "\n"
+        return self.board_str
     def get_dimensions(self) -> tuple[int, int]:
-        """docstring for get_dimensions method"""
-        pass
+        """Returns the (#rows, #columns) dimensions of the board.
+        Preconditions:
+            Each row on the board will have the same length.
+
+        >>>tiles = [[" ", "4"], ["6", "M"]]
+        >>>board = Board(tiles)
+        >>>board.get_dimensions()
+        (2, 2)
+        """
+        return len(self.board), len(self.board[0])
     def get_tile(self, position: tuple[int, int]) -> Tile:
-        """docstring"""
-        pass
+        """Returns the Tile instance located at the given position.
+        Arguments:
+            The position of the desired tile in a tuple: (row, column).
+        Preconditions:
+            The provided position will not be out of bounds.
+
+        >>>tiles = [[" ", "4"], ["6", "M"]]
+        >>>board = Board(tiles)
+        >>>board.get_tile((0, 1))
+        Building(4)
+        """
+        
+        return self.object_board[position[0]][position[1]]
     def get_buildings(self) -> dict[tuple[int, int], Building]:
-        """docstring"""
-        pass
+        """Returns a dictionary mapping the positions of buildings to the building instances at those positions.
+        
+        >>>tiles = [[" ", "4"], ["6", "M"]]
+        >>>board = Board(tiles)
+        >>>board.get_buildings()
+        {(0, 1): Building(4), (1, 0): Building(6)}
+        """
+        self.building_dictionary = dict()
+        for row_i, row in enumerate(self.board):
+            for column_i, column in enumerate(row):
+                if column.isdigit():
+                    self.building_dictionary[(row_i, column_i)] = self.get_tile((row_i, column_i))
+        return self.building_dictionary
 
 class Entity():
     """docstring for Entity"""
@@ -250,7 +320,7 @@ class Enemy(Entity):
 class Scorpion(Enemy):
     """docstring for Scorpion"""
 
-class FireFly(Enemy):
+class Firefly(Enemy):
     """docstring for FireFly"""
 
 class BreachModel():
