@@ -241,7 +241,14 @@ class Entity():
     speed: int, 
     strength: int
     ) -> None:
-        """Initialises an object from the entity class as well as all of it's children"""
+        """Initialises an object from the entity class as well as all of it's children
+        Arguments:
+            position: a tuple with 2 ints that determines the starting row and column of the entity.
+            initial_health: the starting health of the entity.
+            speed: NEED TO DO THIS PART!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            strength: the damage or healing power of the entity
+
+        """
         self._position = position
         self._health = initial_health
         self._speed = speed
@@ -250,12 +257,22 @@ class Entity():
         self._entity_name = ENTITY_NAME
         self._entity_symbol = ENTITY_SYMBOL
         self._entity_repr = f'{ENTITY_NAME}({position}, {initial_health}, {speed}, {strength})'
-        self._entity_str = f'{ENTITY_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{speed},{strength}'
+        self._entity_str = f'{ENTITY_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
     def __repr__(self) -> str:
-        """docstring"""
+        """Returns a machine readable string that could be used to construct an identical instance of the entity.
+        
+        >>>e1 = Entity((0,0),1,1,1)
+        >>>e1
+        Entity((0, 0), 1, 1, 1)
+        """
         return self._entity_repr
     def __str__(self) -> str:
-        """docstring"""
+        """Returns the string representation of the entity, with all of its attributes.
+        
+        >>>e1 = Entity((0,0),1,1,1)
+        >>>str(e1)
+        'E,0,0,1,1,1'
+        """
         return self._entity_str
     def get_symbol(self) -> str:
         """docstring"""
@@ -294,11 +311,13 @@ class Entity():
         return self._friendly
     def get_targets(self) -> list[tuple[int, int]]:
         """docstring"""
-        targets = [(self._position[0]-1, self._position[1]), (self._position[0]+1, self._position[1]), (self._position[0], self._position[1]-1), (self._position[0], self._position[1]+1)]
+        targets = [(self._position[0]-1, self._position[1]), (self._position[0]+1, self._position[1]), (self._position[0], self._position[1]-1), (self._position[0], self._position[1]+1)] #This sucks but I'll fix it later
         return targets
     def attack(self, entity: "Entity") -> None:
         """docstring"""
-        entity.damage(self._strength)
+        self.get_strength() < 0 and not entity.is_friendly(): #might be a better way of doing this
+            return
+        entity.damage(self.get_strength())
 
 class Mech(Entity):
     """docstring for Mech"""
@@ -310,23 +329,67 @@ class Mech(Entity):
     strength: int
     ) -> None:
         """docstring"""
-    #super().__init__(self, position, initial_health, speed, strength)
+        super().__init__(position, initial_health, speed, strength)
+        self._friendly = True
+        self._entity_name = MECH_NAME
+        self._entity_symbol = MECH_SYMBOL
+        self._entity_repr = f'{MECH_NAME}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{MECH_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._active_state = True
 
     def enable(self) -> None:
         """docstring"""
-        pass
+        self._active_state = True
     def disable(self) -> None:
         """docstring"""
-        pass
+        self._active_state = False
     def is_active(self) -> bool:
         """docstring"""
-        pass
+        return self._active_state
 
 class TankMech(Mech):
     """docstring for TankMech"""
+    def __init__(
+    self, 
+    position: tuple[int, int], 
+    initial_health: int, 
+    speed: int, 
+    strength: int
+    ) -> None:
+        """docstring"""
+        super().__init__(position, initial_health, speed, strength) # there is probably a better way of doing the below lines, but hell if I know right now
+        self._friendly = True
+        self._entity_name = TANK_NAME
+        self._entity_symbol = TANK_SYMBOL
+        self._entity_repr = f'{TANK_NAME}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{TANK_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._active_state = True
+    def get_targets(self) -> list[tuple[int, int]]: #might be able to do this better. maybe remove this func and make Mech's GT work for all.
+        """docstring"""
+        targets = [(self._position[0], self._position[1]+tile_index) for tile_index in range(-5, 6) if tile_index != 0] #Source: w3schools
+        return targets
 
 class HealMech(Mech):
     """docstring for TankMech"""
+    def __init__(
+    self, 
+    position: tuple[int, int], 
+    initial_health: int, 
+    speed: int, 
+    strength: int
+    ) -> None:
+        """docstring"""
+        super().__init__(position, initial_health, speed, strength)
+        self._friendly = True
+        self._entity_name = HEAL_NAME
+        self._entity_symbol = HEAL_SYMBOL
+        self._entity_repr = f'{HEAL_NAME}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{HEAL_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._active_state = True
+    def get_strength(self) -> int:
+        """docstring"""
+        return -self._strength
+
 
 class Enemy(Entity):
     """docstring for Enemy"""
