@@ -315,7 +315,7 @@ class Entity():
         return targets
     def attack(self, entity: "Entity") -> None:
         """docstring"""
-        self.get_strength() < 0 and not entity.is_friendly(): #might be a better way of doing this
+        if self.get_strength() < 0 and not entity.is_friendly(): #might be a better way of doing this
             return
         entity.damage(self.get_strength())
 
