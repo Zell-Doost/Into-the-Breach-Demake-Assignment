@@ -256,8 +256,9 @@ class Entity():
         self._friendly = False
         self._entity_name = ENTITY_NAME
         self._entity_symbol = ENTITY_SYMBOL
-        self._entity_repr = f'{ENTITY_NAME}({position}, {initial_health}, {speed}, {strength})'
-        self._entity_str = f'{ENTITY_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        #REPEATED CODE, FIX THIS
+        self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
     def __repr__(self) -> str:
         """Returns a machine readable string that could be used to construct an identical instance of the entity.
         
@@ -286,7 +287,7 @@ class Entity():
     def set_position(self, position: tuple[int, int]) -> None:
         """docstring"""
         self._position = position
-        self._entity_str = f'{ENTITY_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
     def get_health(self) -> int:
         """docstring"""
         return self._health
@@ -302,7 +303,7 @@ class Entity():
             self._health -= damage
             if self._health < 0:
                 self._health = 0
-            self._entity_str = f'{ENTITY_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+            self._entity_str = f'{self._entity_symol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
     def is_alive(self) -> bool:
         """docstring"""
         return self._health > 0
@@ -333,8 +334,8 @@ class Mech(Entity):
         self._friendly = True
         self._entity_name = MECH_NAME
         self._entity_symbol = MECH_SYMBOL
-        self._entity_repr = f'{MECH_NAME}({position}, {initial_health}, {speed}, {strength})'
-        self._entity_str = f'{MECH_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
         self._active_state = True
 
     def enable(self) -> None:
@@ -358,12 +359,10 @@ class TankMech(Mech):
     ) -> None:
         """docstring"""
         super().__init__(position, initial_health, speed, strength) # there is probably a better way of doing the below lines, but hell if I know right now
-        self._friendly = True
         self._entity_name = TANK_NAME
         self._entity_symbol = TANK_SYMBOL
-        self._entity_repr = f'{TANK_NAME}({position}, {initial_health}, {speed}, {strength})'
-        self._entity_str = f'{TANK_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
-        self._active_state = True
+        self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
     def get_targets(self) -> list[tuple[int, int]]: #might be able to do this better. maybe remove this func and make Mech's GT work for all.
         """docstring"""
         targets = [(self._position[0], self._position[1]+tile_index) for tile_index in range(-5, 6) if tile_index != 0] #Source: w3schools
@@ -380,12 +379,10 @@ class HealMech(Mech):
     ) -> None:
         """docstring"""
         super().__init__(position, initial_health, speed, strength)
-        self._friendly = True
         self._entity_name = HEAL_NAME
         self._entity_symbol = HEAL_SYMBOL
-        self._entity_repr = f'{HEAL_NAME}({position}, {initial_health}, {speed}, {strength})'
-        self._entity_str = f'{HEAL_SYMBOL},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
-        self._active_state = True
+        self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
     def get_strength(self) -> int:
         """docstring"""
         return -self._strength
@@ -393,23 +390,105 @@ class HealMech(Mech):
 
 class Enemy(Entity):
     """docstring for Enemy"""
+    def __init__(
+    self, 
+    position: tuple[int, int], 
+    initial_health: int, 
+    speed: int, 
+    strength: int
+    ) -> None:
+        """docstring"""
+        super().__init__(position, initial_health, speed, strength)
+        self._friendly = False
+        self._entity_name = ENEMY_NAME
+        self._entity_symbol = ENEMY_SYMBOL
+        self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._active_state = True
+        self._objective = self._position
+
     def get_objective(self) -> tuple[int, int]:
         """docstring"""
-        pass
+        return self._objective
     def update_objective(
     self, 
     entities: list[Entity], 
     buildings: dict[tuple[int, int], Building]
     ) -> None:
         """docstring"""
-        pass
+        self._objective = self._position
 
 class Scorpion(Enemy):
     """docstring for Scorpion"""
+    def __init__(
+    self, 
+    position: tuple[int, int], 
+    initial_health: int, 
+    speed: int, 
+    strength: int
+    ) -> None:
+        """docstring"""
+        super().__init__(position, initial_health, speed, strength)
+        self._entity_name = SCORPION_NAME
+        self._entity_symbol = SCORPION_SYMBOL
+        self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._active_state = True
+    def get_targets(self) -> list[tuple[int, int]]:
+        """doctring"""
+        targets1 = [(self._position[0], self._position[1]+tile_index) for tile_index in range(-2, 3) if tile_index != 0]
+        targets2 = [(self._position[0]+tile_index, self._position[1]) for tile_index in range(-2, 3) if tile_index != 0]
+        return targets1 + targets2 #think of better names or improves otherwise
+        
+    def update_objective(
+    self, 
+    entities: list[Entity], 
+    buildings: dict[tuple[int, int], Building]
+    ) -> None:
+        """docstring"""
+        #could do whole function in 1 line, but would probably be unreadable
+        possible_objective_healths = [entity.get_health() for entity in entities if entity.is_friendly()]
+        self._objective = entities[possible_objective_healths.index(max(possible_objective_healths))].get_position() #gets the index of the highest priority entity with the most health and and sets objective to its position
 
 class Firefly(Enemy):
     """docstring for FireFly"""
-
+    def __init__(
+    self, 
+    position: tuple[int, int], 
+    initial_health: int, 
+    speed: int, 
+    strength: int
+    ) -> None:
+        """docstring"""
+        super().__init__(position, initial_health, speed, strength)
+        self._entity_name = FIREFLY_NAME
+        self._entity_symbol = FIREFLY_SYMBOL
+        self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
+        self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._active_state = True
+    def get_targets(self) -> list[tuple[int, int]]:
+        """doctring"""
+        targets = [(self._position[0]+tile_index, self._position[1]) for tile_index in range(-5, 6) if tile_index != 0]
+        return targets
+    def update_objective(
+    self, 
+    entities: list[Entity], 
+    buildings: dict[tuple[int, int], Building]
+    ) -> None:
+        """docstring"""
+        #could do whole function in 1 line, but would probably be unreadable
+        possible_objectives = [(building_position, buildings[building_position]) for building_position in buildings if not buildings[building_position].is_destroyed()]
+        possible_objective_healths = [int(str(healths[1])) for healths in possible_objectives]
+        possible_objectives = [objective[0] for objective in possible_objectives if int(str(objective[1])) == min(possible_objective_healths)]
+        objective = possible_objectives[0]
+        for possible_objective in possible_objectives: #figure out a way to skip first iteration or change objective declaration
+            if possible_objective[0] > objective[0]:
+                objective = possible_objective
+            elif possible_objective[0] == objective[0]:
+                if possible_objective[1] > objective[1]:
+                    objective = possible_objective
+        
+        self._objective = objective
 class BreachModel():
     """docstring for BreachModel"""
     def __init__(self, board: Board, entities: list[Entity]) -> None:
