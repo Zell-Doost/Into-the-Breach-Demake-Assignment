@@ -303,7 +303,7 @@ class Entity():
             self._health -= damage
             if self._health < 0:
                 self._health = 0
-            self._entity_str = f'{self._entity_symol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+            self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
     def is_alive(self) -> bool:
         """docstring"""
         return self._health > 0
