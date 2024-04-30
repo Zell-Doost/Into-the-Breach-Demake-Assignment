@@ -504,7 +504,7 @@ class BreachModel():
 
     def __str__(self) -> str:
         """docstring"""
-        string_representation = str(self._board)
+        string_representation = f'{str(self._board)}\n'
         for entity in self._entities:
             string_representation += "\n"
             string_representation += str(entity)
@@ -517,11 +517,11 @@ class BreachModel():
         return self._entities
     def has_won(self) -> bool:
         """docstring"""
-        building_dict = [self._board.get_buildings()[building_position] for building_position in self._board.get_buildings() if not self._board.get_buildings()[building_position].is_destroyed()]
+        building_dict = [self.get_board().get_buildings()[building_position] for building_position in self.get_board().get_buildings() if not self.get_board().get_buildings()[building_position].is_destroyed()]
         building_check = bool(len(building_dict) > 0)
-        entity_list = [str(entity) for entity in self._entities if entity.is_alive()]
+        entity_list = [str(entity)[0] for entity in self._entities if entity.is_alive()]
         mech_alive_check = bool(TANK_SYMBOL in entity_list or HEAL_SYMBOL in entity_list)
-        enemy_dead_check = bool(SCORPION_SYMBOL not in entity_list or FIREFLY_SYMBOL not in entity_list)
+        enemy_dead_check = bool(SCORPION_SYMBOL not in entity_list and FIREFLY_SYMBOL not in entity_list)
         return building_check and mech_alive_check and enemy_dead_check
     def has_lost(self) -> bool:
         """docstring"""
@@ -575,30 +575,49 @@ class BreachModel():
         enemies_need_to_move = enemies.copy()
         prev_enemies = enemies.copy()
         # print(enemies)
-        while enemies_need_to_move:
-            # print(enemies_need_to_move)
-            for enemy in enemies_need_to_move:
-                # print(enemy)
-                possible_moves = self.get_valid_movement_positions(enemy)
-                target = enemy.get_objective()
-                distance = None
-                #PROBABLY NOT OPTIMISED AND KIND OF MESSY, TRY TO DO WITH ONE FOR LOOP
+        # while enemies_need_to_move:
+        #     # print(enemies_need_to_move)
+        #     for enemy in enemies_need_to_move:
+        #         # print(enemy)
+        #         possible_moves = self.get_valid_movement_positions(enemy)
+        #         target = enemy.get_objective()
+        #         distance = None
+        #         #PROBABLY NOT OPTIMISED AND KIND OF MESSY, TRY TO DO WITH ONE FOR LOOP
+        #         for possible_move in possible_moves:
+        #             distance_check = get_distance(self, enemy.get_position(), possible_move)
+        #             if (distance == None or distance < distance_check) and distance_check > 0:
+        #                 distance = distance_check
+        #         if distance != None:
+        #             for possible_move in possible_moves:
+        #                 if get_distance(self, enemy.get_position(), possible_move) == distance:
+        #                     enemy.set_position(possible_move)
+        #                     enemies_need_to_move.remove(enemy)
+        #     # print(enemies_need_to_move)
+        #     # print(enemies)
+        #     # print(prev_enemies)
+        #     # if enemies == prev_enemies:
+        #     #     print("TEST")
+        #     #     enemies_need_to_move = []
+        #     prev_enemies = enemies.copy()
+
+
+
+        for enemy in enemies:
+            target = enemy.get_objective()
+            distance = None
+            #PROBABLY NOT OPTIMISED AND KIND OF MESSY, TRY TO DO WITH ONE FOR LOOP
+            possible_moves = self.get_valid_movement_positions(enemy)
+            for possible_move in possible_moves:
+                distance_check = get_distance(self, enemy.get_position(), possible_move)
+                if (distance == None or distance < distance_check) and distance_check > 0:
+                    distance = distance_check
+            if distance != None:
                 for possible_move in possible_moves:
-                    distance_check = get_distance(self, enemy.get_position(), possible_move)
-                    if (distance == None or distance < distance_check) and distance_check > 0:
-                        distance = distance_check
-                if distance != None:
-                    for possible_move in possible_moves:
-                        if get_distance(self, enemy.get_position(), possible_move) == distance:
-                            enemy.set_position(possible_move)
-                            enemies_need_to_move.remove(enemy)
-            # print(enemies_need_to_move)
-            # print(enemies)
-            # print(prev_enemies)
-            # if enemies == prev_enemies:
-            #     print("TEST")
-            #     enemies_need_to_move = []
-            prev_enemies = enemies.copy()
+                    if get_distance(self, enemy.get_position(), possible_move) == distance:
+                        enemy.set_position(possible_move)
+
+
+
     def make_attack(self, entity: Entity) -> None:
         """docstring"""
         #THESE DICTIONARIES ARE REPEATED MULTIPLE TIMES, NEED TO FIX
