@@ -140,7 +140,8 @@ class Building(Tile):
                 self._health = 0
             elif self._health > 9:
                 self._health = 9
-            self._tile_str = str(self._health)
+        self._tile_str = str(self._health)
+        self._tile_repr = f'{BUILDING_NAME}({self._health})'
 
 class Board():
     """Board Class"""
@@ -288,6 +289,7 @@ class Entity():
         """docstring"""
         self._position = position
         self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._entity_repr = f'{self._entity_name}({position}, {self._health}, {self._speed}, {self._strength})'
     def get_health(self) -> int:
         """docstring"""
         return self._health
@@ -304,6 +306,7 @@ class Entity():
             if self._health < 0:
                 self._health = 0
             self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+            self._entity_repr = f'{self._entity_name}({self._position}, {self._health}, {self._speed}, {self._strength})'
     def is_alive(self) -> bool:
         """docstring"""
         return self._health > 0
@@ -493,48 +496,150 @@ class BreachModel():
     """docstring for BreachModel"""
     def __init__(self, board: Board, entities: list[Entity]) -> None:
         """docstring"""
-        pass
+        self._board = board
+        self._entities = entities
+        self._is_move_made = False
+    #def update_building(self, board: Board, building: ) -> None:
+     #   """docstring"""
+
     def __str__(self) -> str:
         """docstring"""
-        pass
+        string_representation = str(self._board)
+        for entity in entities:
+            string_representation += "\n"
+            string_representation += str(entity)
+        return string_representation
     def get_board(self) -> Board:
         """docstring"""
-        pass
+        return self._board
     def get_entities(self) -> list[Entity]:
         """docstring"""
-        pass
+        return self._entities
     def has_won(self) -> bool:
         """docstring"""
-        pass
+        building_dict = [board.get_buildings()[building_position] for building_position in board.get_buildings() if not board.get_buildings()[building_position].is_destroyed()]
+        building_check = bool(len(building_dict) > 0)
+        entity_list = [str(entity) for entity in entities if entity.is_alive()]
+        mech_alive_check = bool(TANK_SYMBOL in entity_list or HEAL_SYMBOL in entity_list)
+        enemy_dead_check = bool(SCORPION_SYMBOL not in entity_list or FIREFLY_SYMBOL not in entity_list)
+        return building_check and mech_alive_check and enemy_dead_check
     def has_lost(self) -> bool:
         """docstring"""
-        pass
+        #REPEATED CODE, NEED TO FIX
+        building_dict = [board.get_buildings()[building_position] for building_position in board.get_buildings() if not board.get_buildings()[building_position].is_destroyed()]
+        building_check = bool(len(building_dict) == 0)
+        entity_list = [str(entity)[0] for entity in entities if entity.is_alive()]
+        mech_dead_check = bool(TANK_SYMBOL not in entity_list or HEAL_SYMBOL not in entity_list)
+        return building_check or mech_dead_check
     def entity_positions(self) -> dict[tuple[int, int], Entity]:
         """docstring"""
-        pass
+        # entity_position = {}
+        # for entity in entities:
+        #     entity_position[entity.get_position()] = entity
+        entity_position_dict = {entity.get_position(): entity for entity in self._entities}
+        return entity_position_dict
     def get_valid_movement_positions(self, 
     entity: Entity
     ) -> list[tuple[int, int]]:
         """docstring"""
-        pass
+        possible_moves = []
+        pos = entity.get_position() #pos stands for the position of the mech
+        for i in range(-entity.get_speed(), entity.get_speed()+1):
+            for j in range(-abs(entity.get_speed()-abs(i)), abs(entity.get_speed()-abs(i))+1):
+                distance = get_distance(self, pos, (pos[0]+i, pos[1]+j))
+                if entity.get_speed() >= distance > 0:
+                    possible_moves.append((pos[0]+i, pos[1]+j))
+        return possible_moves
     def attempt_move(self, entity: Entity, position: tuple[int, int]) -> None:
         """docstring"""
-        pass
+        if entity.is_friendly() and entity.is_active() and position in self.get_valid_movement_positions(entity):
+            entity.set_position(position)
+            entity.disable()
+            self._is_move_made = True
     def ready_to_save(self) -> bool:
         """docstring"""
-        pass
+        return not self._is_move_made
     def assign_objectives(self) -> None:
         """docstring"""
-        pass
+        mechs = [entity for entity in self._entities if str(entity)[0] in [MECH_SYMBOL, TANK_SYMBOL, HEAL_SYMBOL] and entity.is_alive()]
+        buildings = self._board.get_buildings()
+        enemies = [entity for entity in self._entities if str(entity)[0] in [ENEMY_SYMBOL, SCORPION_SYMBOL, FIREFLY_SYMBOL] and entity.is_alive()]
+        for enemy in enemies:
+            enemy.update_objective(mechs, buildings)
     def move_enemies(self) -> None:
         """docstring"""
-        pass
+        #REPEATED CODE, MAKE SURE TO FIX THAT
+        mechs = [entity for entity in self.get_entities() if str(entity)[0] in [MECH_SYMBOL, TANK_SYMBOL, HEAL_SYMBOL] and entity.is_alive()]
+        buildings = self._board.get_buildings()
+        enemies = [entity for entity in self.get_entities() if str(entity)[0] in [ENEMY_SYMBOL, SCORPION_SYMBOL, FIREFLY_SYMBOL] and entity.is_alive()]
+        enemies_need_to_move = enemies.copy()
+        prev_enemies = enemies.copy()
+        # print(enemies)
+        while enemies_need_to_move:
+            # print(enemies_need_to_move)
+            for enemy in enemies_need_to_move:
+                # print(enemy)
+                possible_moves = self.get_valid_movement_positions(enemy)
+                target = enemy.get_objective()
+                distance = None
+                #PROBABLY NOT OPTIMISED AND KIND OF MESSY, TRY TO DO WITH ONE FOR LOOP
+                for possible_move in possible_moves:
+                    distance_check = get_distance(self, enemy.get_position(), possible_move)
+                    if (distance == None or distance > distance_check) and distance_check > 0:
+                        distance = distance_check
+                if distance != None:
+                    for possible_move in possible_moves:
+                        if get_distance(self, enemy.get_position(), possible_move) == distance:
+                            enemy.set_position(possible_move)
+                            enemies_need_to_move.remove(enemy)
+            # print(enemies_need_to_move)
+            # print(enemies)
+            # print(prev_enemies)
+            # if enemies == prev_enemies:
+            #     print("TEST")
+            #     enemies_need_to_move = []
+            prev_enemies = enemies.copy()
     def make_attack(self, entity: Entity) -> None:
         """docstring"""
-        pass
+        #THESE DICTIONARIES ARE REPEATED MULTIPLE TIMES, NEED TO FIX
+        mech_dict = {mech.get_position(): mech for mech in self._entities if mech.is_alive() and (TANK_SYMBOL in str(mech) or HEAL_SYMBOL in str(mech))}
+        enemy_dict = {enemy.get_position(): enemy for enemy in self._entities if enemy.is_alive() and str(enemy)[0] in [SCORPION_SYMBOL, FIREFLY_SYMBOL]}
+        building_dict = self._board.get_buildings()
+        targets = entity.get_targets()
+        #Attack entities
+        if TANK_SYMBOL in str(entity):
+            for target in targets:
+                if target in enemy_dict:
+                    entity.attack(enemy_dict[target])
+        else:
+            for target in targets:
+                if target in mech_dict:
+                    entity.attack(mech_dict[target])
+        mech_list = [mech_dict[mech_position] for mech_position in mech_dict if mech_dict[mech_position].is_alive()]
+        enemy_list = [enemy_dict[enemy_position] for enemy_position in enemy_dict if enemy_dict[enemy_position].is_alive()]
+        print(mech_list)
+        print(enemy_list)
+        self._entities = mech_list + enemy_list
+        #Attack buildings
+        for target in targets:
+            if target in building_dict:
+                building_dict[target].damage(entity.get_strength())
     def end_turn(self) -> None:
         """docstring"""
-        pass
+        #REPEATED LIST CREATION, NEED TO FIX
+        enemies = [entity for entity in self._entities if not entity.is_friendly() and entity.is_alive()]
+        mechs = [entity for entity in self._entities if entity.is_friendly()and entity.is_alive()]
+        for enemy in enemies:
+            self.make_attack(enemy)
+        enemies = [entity for entity in self._entities if not entity.is_friendly() and entity.is_alive()]
+        mechs = [entity for entity in self._entities if entity.is_friendly()and entity.is_alive()]
+        self.move_enemies()
+        for mech in mechs:
+            mech.enable()
+            #REPEATED AGAIN, FIX THIS
+        new_enemies = [entity for entity in enemies if not entity.is_friendly() and entity.is_alive()]
+        new_mechs = [entity for entity in mechs if entity.is_friendly() and entity.is_alive()]
+        self._entities = mechs + enemies
 
 
 ##################################### View #####################################
