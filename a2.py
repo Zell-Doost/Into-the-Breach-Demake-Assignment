@@ -505,7 +505,7 @@ class BreachModel():
     def __str__(self) -> str:
         """docstring"""
         string_representation = str(self._board)
-        for entity in entities:
+        for entity in self._entities:
             string_representation += "\n"
             string_representation += str(entity)
         return string_representation
@@ -517,18 +517,18 @@ class BreachModel():
         return self._entities
     def has_won(self) -> bool:
         """docstring"""
-        building_dict = [board.get_buildings()[building_position] for building_position in board.get_buildings() if not board.get_buildings()[building_position].is_destroyed()]
+        building_dict = [self._board.get_buildings()[building_position] for building_position in self._board.get_buildings() if not self._board.get_buildings()[building_position].is_destroyed()]
         building_check = bool(len(building_dict) > 0)
-        entity_list = [str(entity) for entity in entities if entity.is_alive()]
+        entity_list = [str(entity) for entity in self._entities if entity.is_alive()]
         mech_alive_check = bool(TANK_SYMBOL in entity_list or HEAL_SYMBOL in entity_list)
         enemy_dead_check = bool(SCORPION_SYMBOL not in entity_list or FIREFLY_SYMBOL not in entity_list)
         return building_check and mech_alive_check and enemy_dead_check
     def has_lost(self) -> bool:
         """docstring"""
         #REPEATED CODE, NEED TO FIX
-        building_dict = [board.get_buildings()[building_position] for building_position in board.get_buildings() if not board.get_buildings()[building_position].is_destroyed()]
+        building_dict = [self._board.get_buildings()[building_position] for building_position in self._board.get_buildings() if not self._board.get_buildings()[building_position].is_destroyed()]
         building_check = bool(len(building_dict) == 0)
-        entity_list = [str(entity)[0] for entity in entities if entity.is_alive()]
+        entity_list = [str(entity)[0] for entity in self._entities if entity.is_alive()]
         mech_dead_check = bool(TANK_SYMBOL not in entity_list or HEAL_SYMBOL not in entity_list)
         return building_check or mech_dead_check
     def entity_positions(self) -> dict[tuple[int, int], Entity]:
@@ -585,7 +585,7 @@ class BreachModel():
                 #PROBABLY NOT OPTIMISED AND KIND OF MESSY, TRY TO DO WITH ONE FOR LOOP
                 for possible_move in possible_moves:
                     distance_check = get_distance(self, enemy.get_position(), possible_move)
-                    if (distance == None or distance > distance_check) and distance_check > 0:
+                    if (distance == None or distance < distance_check) and distance_check > 0:
                         distance = distance_check
                 if distance != None:
                     for possible_move in possible_moves:
@@ -602,24 +602,17 @@ class BreachModel():
     def make_attack(self, entity: Entity) -> None:
         """docstring"""
         #THESE DICTIONARIES ARE REPEATED MULTIPLE TIMES, NEED TO FIX
-        mech_dict = {mech.get_position(): mech for mech in self._entities if mech.is_alive() and (TANK_SYMBOL in str(mech) or HEAL_SYMBOL in str(mech))}
-        enemy_dict = {enemy.get_position(): enemy for enemy in self._entities if enemy.is_alive() and str(enemy)[0] in [SCORPION_SYMBOL, FIREFLY_SYMBOL]}
+        entity_dict = {ent.get_position(): ent for ent in self.get_entities() if ent.is_alive()} #ent is entity
         building_dict = self._board.get_buildings()
         targets = entity.get_targets()
         #Attack entities
-        if TANK_SYMBOL in str(entity):
-            for target in targets:
-                if target in enemy_dict:
-                    entity.attack(enemy_dict[target])
-        else:
-            for target in targets:
-                if target in mech_dict:
-                    entity.attack(mech_dict[target])
-        mech_list = [mech_dict[mech_position] for mech_position in mech_dict if mech_dict[mech_position].is_alive()]
-        enemy_list = [enemy_dict[enemy_position] for enemy_position in enemy_dict if enemy_dict[enemy_position].is_alive()]
-        print(mech_list)
-        print(enemy_list)
-        self._entities = mech_list + enemy_list
+        for target in targets:
+            if target in entity_dict and entity.is_alive():
+                # print(entity, target)
+                entity.attack(entity_dict[target])
+        entity_list = [entity_dict[entity_position] for entity_position in entity_dict if entity_dict[entity_position].is_alive()]
+        # print(entity_list)
+        self._entities = entity_list
         #Attack buildings
         for target in targets:
             if target in building_dict:
@@ -627,19 +620,19 @@ class BreachModel():
     def end_turn(self) -> None:
         """docstring"""
         #REPEATED LIST CREATION, NEED TO FIX
-        enemies = [entity for entity in self._entities if not entity.is_friendly() and entity.is_alive()]
-        mechs = [entity for entity in self._entities if entity.is_friendly()and entity.is_alive()]
-        for enemy in enemies:
-            self.make_attack(enemy)
-        enemies = [entity for entity in self._entities if not entity.is_friendly() and entity.is_alive()]
-        mechs = [entity for entity in self._entities if entity.is_friendly()and entity.is_alive()]
+        entities = self.get_entities()
+        for entity in entities:
+            self.make_attack(entity)
+        print(self.entity_positions())
+        enemies = [entity for entity in self.get_entities() if not entity.is_friendly() and entity.is_alive()]
+        mechs = [entity for entity in self.get_entities() if entity.is_friendly()and entity.is_alive()]
         self.move_enemies()
         for mech in mechs:
             mech.enable()
             #REPEATED AGAIN, FIX THIS
         new_enemies = [entity for entity in enemies if not entity.is_friendly() and entity.is_alive()]
         new_mechs = [entity for entity in mechs if entity.is_friendly() and entity.is_alive()]
-        self._entities = mechs + enemies
+        self._entities = new_mechs + new_enemies
 
 
 ##################################### View #####################################
