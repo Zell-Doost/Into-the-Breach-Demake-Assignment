@@ -665,12 +665,63 @@ class GameGrid(AbstractGrid):
     movement: bool = False
     ) -> None:
         """docstring"""
-        pass
+        self.set_dimensions(board.get_dimensions())
+        self._cell_size = self._get_cell_size()
+        #self._entities = board.get_entities()
+        #canvas = tk.Canvas(root, width=GRID_SIZE+SIDEBAR_WIDTH, height=GRID_SIZE+BANNER_HEIGHT+CONTROL_BAR_HEIGHT, bg='gray')
+        entity_dict = {entity.get_position(): entity for entity in entities}
+        self.pack(side=tk.LEFT, anchor=tk.N)
+        self.clear()
+        for column in range(board.get_dimensions()[0]):
+            for row in range(board.get_dimensions()[1]):
+                #Check for tiles and buildings
+                if str(board.get_tile((row, column))) == MOUNTAIN_SYMBOL:
+                    self.color_cell((row, column), MOUNTAIN_COLOR)
+                elif str(board.get_tile((row, column))) == GROUND_SYMBOL:
+                    self.color_cell((row, column), GROUND_COLOR)
+                elif str(board.get_tile((row, column))).isdigit():
+                    if board.get_tile((row, column)).is_destroyed():
+                        self.color_cell((row, column), DESTROYED_COLOR)
+                    else:
+                        self.color_cell((row, column), BUILDING_COLOR)
+                        self.annotate_position((row, column), str(board.get_tile((row, column))), font=ENTITY_FONT)
+                        
+
+                #Check for highlighted tiles
+                if highlighted:
+                    if (row, column) in highlighted:
+                        if movement:
+                            self.color_cell((row, column), MOVE_COLOR)
+                        else:
+                            self.color_cell((row, column), ATTACK_COLOR)
+
+                #Check for entities
+                if (row, column) in entity_dict:
+                    if str(entity_dict[(row, column)])[0] == TANK_SYMBOL:
+                        self.annotate_position((row, column), TANK_DISPLAY, font=ENTITY_FONT)
+                    elif str(entity_dict[(row, column)])[0] == HEAL_SYMBOL:
+                        self.annotate_position((row, column), HEAL_DISPLAY, font=ENTITY_FONT)
+                    elif str(entity_dict[(row, column)])[0] == SCORPION_SYMBOL:
+                        self.annotate_position((row, column), SCORPION_DISPLAY, font=ENTITY_FONT)
+                    elif str(entity_dict[(row, column)])[0] == FIREFLY_SYMBOL:
+                        self.annotate_position((row, column), FIREFLY_DISPLAY, font=ENTITY_FONT)
+                
     def bind_click_callback(self, 
     click_callback: Callable[[tuple[int, int]], None]
     ) -> None:
         """docstring"""
-        pass
+        self.bind('<Button-1>', click_callback)
+        self.bind('<Button-2>', click_callback)
+
+
+    #THIS FUNCTION IS OR TESTING, REMOVE LATER
+    def _butt(self, event):
+        x = event.x
+        y = event.y
+        grid_position = self.pixel_to_cell(x, y)
+        print(grid_position)
+
+
 class SideBar(AbstractGrid):
     """docstring for SideBar"""
     def __init__(self, 
@@ -679,10 +730,29 @@ class SideBar(AbstractGrid):
     size: tuple[int, int]
     ) -> None:
         """docstring"""
-        pass
+        super().__init__(master, dimensions, size)
+        self._dimensions = dimensions
+        self._size = size
     def display(self, entities: list[Entity]) -> None:
         """docstring"""
-        pass
+        self.pack(side=tk.LEFT, anchor=tk.N)
+        self.clear()
+        display = None
+        for column, heading in enumerate(SIDEBAR_HEADINGS):
+            self.annotate_position((0, column), heading, font=SIDEBAR_FONT)
+        for row, entity in enumerate(entities):
+            if str(entity)[0] == TANK_SYMBOL:
+                display = TANK_DISPLAY
+            elif str(entity)[0] == HEAL_SYMBOL:
+                display = HEAL_DISPLAY
+            elif str(entity)[0] == SCORPION_SYMBOL:
+                display = SCORPION_DISPLAY
+            elif str(entity)[0] == FIREFLY_SYMBOL:
+                display = FIREFLY_DISPLAY
+            self.annotate_position((row+1, 0), display, font=SIDEBAR_FONT)
+            self.annotate_position((row+1, 1), f'({entity.get_position()[0]}, {entity.get_position()[1]})', font=SIDEBAR_FONT)
+            self.annotate_position((row+1, 2), entity.get_health(), font=SIDEBAR_FONT)
+            self.annotate_position((row+1, 3), entity.get_strength(), font=SIDEBAR_FONT)
 
 class ControlBar(tk.Frame):
     def __init__(self, 
@@ -757,13 +827,35 @@ class IntoTheBreach():
         pass
 
 
+
+
+
+
+
+
+
 def play_game(root: tk.Tk, file_path: str) -> None:
     """The function that runs the game"""
-    pass
+    board = Board([['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', ' ', ' ', ' ', ' ', '3', ' ', ' ', ' ', 'M'], ['M', ' ', ' ', ' ', '3', 'M', ' ', ' ', ' ', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', '2', ' ', ' ', ' ', 'M', 'M', 'M', 'M', 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']])
+    entities = [TankMech((1, 1), 5, 3, 3), TankMech((1, 2), 3, 3, 3), HealMech((1, 3), 2, 3, 2), Scorpion((8, 8), 3, 3, 2), Firefly((8, 7), 2, 2, 1), Firefly((7, 6), 1, 1, 1)]
+    #entities = [HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), Scorpion((8, 8), 3, 3, 2), Firefly((8, 7), 2, 2, 1), Firefly((7, 6), 1, 1, 1)]
+    model = BreachModel(board, entities)
+    root.title(BANNER_TEXT)
+    root.geometry(f'{GRID_SIZE+SIDEBAR_WIDTH}x{GRID_SIZE+BANNER_HEIGHT+CONTROL_BAR_HEIGHT}')
+    #root.geometry('750x625')
+    banner = tk.Label(root, text=BANNER_TEXT, font=BANNER_FONT)
+    banner.pack(fill=tk.X)
+    g = GameGrid(root, board.get_dimensions(), (GRID_SIZE, GRID_SIZE))
+    s = SideBar(root, (len(entities)+1, 4), (SIDEBAR_WIDTH, GRID_SIZE))
+    g.redraw(model.get_board(), model.get_entities())
+    g.bind_click_callback(g._butt)
+    s.display(model.get_entities())
+    root.mainloop()
 
 def main() -> None:
     """The main function"""
-    pass
+    root = tk.Tk()
+    play_game(root, "a")
 
 if __name__ == "__main__":
     main()
