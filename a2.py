@@ -259,6 +259,7 @@ class Entity():
         self._entity_symbol = ENTITY_SYMBOL
         #REPEATED CODE, FIX THIS
         self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
+        print(self._position)
         self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
     def __repr__(self) -> str:
         """Returns a machine readable string that could be used to construct an identical instance of the entity.
@@ -669,13 +670,22 @@ class GameGrid(AbstractGrid):
         self._cell_size = self._get_cell_size()
         #self._entities = board.get_entities()
         #canvas = tk.Canvas(root, width=GRID_SIZE+SIDEBAR_WIDTH, height=GRID_SIZE+BANNER_HEIGHT+CONTROL_BAR_HEIGHT, bg='gray')
-        entity_dict = {entity.get_position(): entity for entity in entities}
-        self.pack(side=tk.LEFT, anchor=tk.N)
+        self._entity_dict = {entity.get_position(): entity for entity in entities}
         self.clear()
-        for column in range(board.get_dimensions()[0]):
-            for row in range(board.get_dimensions()[1]):
+        self.pack(side=tk.LEFT, anchor=tk.N)
+        for row in range(board.get_dimensions()[0]):
+            for column in range(board.get_dimensions()[1]):
+
+                print("TEST")
+                #Check for highlighted tiles
+                if (row, column) in highlighted:
+                    if movement:
+                        self.color_cell((row, column), MOVE_COLOR)
+                    else:
+                        self.color_cell((row, column), ATTACK_COLOR)
+
                 #Check for tiles and buildings
-                if str(board.get_tile((row, column))) == MOUNTAIN_SYMBOL:
+                elif str(board.get_tile((row, column))) == MOUNTAIN_SYMBOL:
                     self.color_cell((row, column), MOUNTAIN_COLOR)
                 elif str(board.get_tile((row, column))) == GROUND_SYMBOL:
                     self.color_cell((row, column), GROUND_COLOR)
@@ -687,39 +697,42 @@ class GameGrid(AbstractGrid):
                         self.annotate_position((row, column), str(board.get_tile((row, column))), font=ENTITY_FONT)
                         
 
-                #Check for highlighted tiles
-                if highlighted:
-                    if (row, column) in highlighted:
-                        if movement:
-                            self.color_cell((row, column), MOVE_COLOR)
-                        else:
-                            self.color_cell((row, column), ATTACK_COLOR)
+                
 
                 #Check for entities
-                if (row, column) in entity_dict:
-                    if str(entity_dict[(row, column)])[0] == TANK_SYMBOL:
+                if (row, column) in self._entity_dict:
+                    if str(self._entity_dict[(row, column)])[0] == TANK_SYMBOL:
                         self.annotate_position((row, column), TANK_DISPLAY, font=ENTITY_FONT)
-                    elif str(entity_dict[(row, column)])[0] == HEAL_SYMBOL:
+                    elif str(self._entity_dict[(row, column)])[0] == HEAL_SYMBOL:
                         self.annotate_position((row, column), HEAL_DISPLAY, font=ENTITY_FONT)
-                    elif str(entity_dict[(row, column)])[0] == SCORPION_SYMBOL:
+                    elif str(self._entity_dict[(row, column)])[0] == SCORPION_SYMBOL:
                         self.annotate_position((row, column), SCORPION_DISPLAY, font=ENTITY_FONT)
-                    elif str(entity_dict[(row, column)])[0] == FIREFLY_SYMBOL:
+                    elif str(self._entity_dict[(row, column)])[0] == FIREFLY_SYMBOL:
                         self.annotate_position((row, column), FIREFLY_DISPLAY, font=ENTITY_FONT)
                 
     def bind_click_callback(self, 
     click_callback: Callable[[tuple[int, int]], None]
     ) -> None:
         """docstring"""
-        self.bind('<Button-1>', click_callback)
-        self.bind('<Button-2>', click_callback)
+        self.bind('<Button-1>', call_back)
+        self.bind('<Button-2>', call_back)
+
+    #THIS FUNCTION IS FOR TESTING, REMOVE LATER
+    def _mouse_position_to_entity(self, position: tuple[int, int]) -> Optional[Entity]:
+        """docstring"""
+        if position in self._entity_dict:
+            return self._entity_dict[position]
 
 
-    #THIS FUNCTION IS OR TESTING, REMOVE LATER
-    def _butt(self, event):
-        x = event.x
-        y = event.y
+    def _get_mouse_coord(self, event, pos):
+        """docstring"""
+        #REMOVE PRINT
+        x, y = pos(event)
         grid_position = self.pixel_to_cell(x, y)
         print(grid_position)
+        entity = self._mouse_position_to_entity(grid_position)
+        print(entity)
+        return entity
 
 
 class SideBar(AbstractGrid):
@@ -763,7 +776,19 @@ class ControlBar(tk.Frame):
     **kwargs
     ) -> None:
         """docstring"""
-        pass
+        super().__init__(master)
+        self._save_callback = save_callback
+        self._load_callback = load_callback
+        self._turn_callback = turn_callback
+        self.pack(side=tk.BOTTOM)
+        padding = (GRID_SIZE+SIDEBAR_WIDTH)/9
+        button_texts = [SAVE_TEXT, LOAD_TEXT, TURN_TEXT]
+        button_commands = [save_callback, self._load_callback, turn_callback]
+        for text, command in zip(button_texts, button_commands):
+            button = tk.Button(self, text=text, command=command)
+            button.pack(side=tk.LEFT, expand=tk.TRUE, padx=padding)
+
+
 
 class BreachView():
     """docstring for BreachView"""
@@ -775,20 +800,29 @@ class BreachView():
     turn_callback: Optional[Callable[[], None]] = None, 
     ) -> None:
         """docstring"""
-        pass
+        root.title(BANNER_TEXT)
+        root.geometry(f'{GRID_SIZE+SIDEBAR_WIDTH}x{GRID_SIZE+BANNER_HEIGHT+CONTROL_BAR_HEIGHT}') #SHOULD NOT BE -10, NEED TO FIX THIS
+        #root.geometry('750x625')
+        banner = tk.Label(root, text=BANNER_TEXT, font=BANNER_FONT)
+        banner.pack(fill=tk.X)
+        self._game_grid = GameGrid(root, board_dims, (GRID_SIZE, GRID_SIZE))
+
+        self._side_bar = SideBar(root, (7, 4), (SIDEBAR_WIDTH, GRID_SIZE))#2ND ARG SHOULD BE AMOUNT OF ENTITIES+1 instead of 7
+        self._control_bar = ControlBar(root, save_callback, load_callback, turn_callback)
     def bind_click_callback(self, 
     click_callback: Callable[[tuple[int, int]], None]
     ) -> None:
         """docstring"""
-        pass
+        self._game_grid.bind_click_callback(click_callback) #CHANGE CALLABLE FUNCTION
     def redraw(self, 
     board: Board, 
-    entites: list[Entity], 
+    entities: list[Entity], 
     highlighted: list[tuple[int, int]] = None, 
     movement: bool = False
     ) -> None:
         """docstring"""
-        pass
+        self._game_grid.redraw(board, entities, highlighted, movement)
+        self._side_bar.display(entities)
 
 
 
@@ -800,28 +834,133 @@ class IntoTheBreach():
     """docstring for IntoTheBreach"""
     def __init__(self, root: tk.Tk, game_file: str) -> None:
         """docstring"""
-        pass
+
+
+        self._root = root
+
+        board = []
+        entities = []
+        is_on_board = True
+        for line in game_file:
+            if line == '\n':
+                is_on_board = False
+            if is_on_board: #take board
+                board.append([char for char in line if char != '\n'])
+            elif line != '\n': #take entities
+                stats_str = line[2:].split(',')
+                stats = [(int(stats_str[0]), int(stats_str[1])), int(stats_str[2]), int(stats_str[3]), int(stats_str[4].replace('\n', ''))]
+                print(stats)
+                if line[0] == TANK_SYMBOL:
+                    entities.append(TankMech(stats[0], stats[1], stats[2], stats[3]))
+                elif line[0] == HEAL_SYMBOL:
+                    entities.append(HealMech(stats[0], stats[1], stats[2], stats[3]))
+                elif line[0] == SCORPION_SYMBOL:
+                    entities.append(Scorpion(stats[0], stats[1], stats[2], stats[3]))
+                elif line[0] == FIREFLY_SYMBOL:
+                    entities.append(Firefly(stats[0], stats[1], stats[2], stats[3]))
+        print(board)
+        print(entities)
+        self._board = Board(board)
+        self._entities = entities
+        self._model = BreachModel(self._board, self._entities)
+
+        #self._view = BreachView(root, self._board.get_dimensions(), 'a', self._load_game, 'c')
+        self._view = BreachView(self._root, self._board.get_dimensions(), save_callback=self._save_game, load_callback=self._load_game, turn_callback=self._end_turn)
+        self._focused_entity = 0
+        self._highlighted = []
+        self._moving = False
+        
+        
+
     def redraw(self) -> None:
         """docstring"""
-        pass
+        print('---------------------------------------------------------------')
+        print(self._model.get_board())
+        self._view.redraw(self._model.get_board(), self._model.get_entities(), highlighted=self._highlighted, movement=self._moving)
+
     def set_focused_entity(self, entity: Optional[Entity]) -> None:
         """docstring"""
-        pass
+
+        #NEED BELOW LINE FOR CLICK HANDLING PROBABLY
+        #set_focused_entity(self._find_focused_entity)
+        #self._view.bind_click_callback(self._find_focused_entity)
+        if entity:
+            self._focused_entity = entity
+            if entity.is_active():
+                self._moving = True
+                self._highlighted = self._model.get_valid_movement_positions(entity)
+            else:
+                self._moving = False
+                self._highlighted = entity.get_targets()
+        else:
+            self._focused_entity = None
+            self.highlighted = []
+
+
+    def _find_mouse_position(self, event) -> Optional[Entity]:
+        """docstring"""
+        mouse_position = event.x, event.y
+        return mouse_position
+
+    def _mouse_position_to_entity(self, position: tuple[int, int]) -> Optional[Entity]:
+        """docstring"""
+        entity_dict = {entity.get_position(): entity for entity in self._model.get_entities()}
+        if position in entity_dict:
+            return entity_dict[position]
+
+
     def make_move(self, position: tuple[int, int]) -> None:
         """docstring"""
-        pass
+        if position in self._highlighted:
+            self._focused_entity.set_position(position)
+
+
     def load_model(self, file_path: str) -> None:
         """docstring"""
-        pass
+        file = open(file_path, 'r')
+        board = []
+        entities = []
+        is_on_board = True
+        for line in file:
+            if line == '\n':
+                is_on_board = False
+            if is_on_board: #take board
+                board.append([char for char in line if char != '\n'])
+            elif line != '\n': #take entities
+                #stats = [(int(line[2]), int(line[4])), int(line[6]), int(line[8]), int(line[10])]
+                stats_str = line[2:].split(',')
+                stats = [(int(stats_str[0]), int(stats_str[1])), int(stats_str[2]), int(stats_str[3]), int(stats_str[4].replace('\n', ''))]
+                if line[0] == TANK_SYMBOL:
+                    entities.append(TankMech(stats[0], stats[1], stats[2], stats[3]))
+                elif line[0] == HEAL_SYMBOL:
+                    entities.append(HealMech(stats[0], stats[1], stats[2], stats[3]))
+                elif line[0] == SCORPION_SYMBOL:
+                    entities.append(Scorpion(stats[0], stats[1], stats[2], stats[3]))
+                elif line[0] == FIREFLY_SYMBOL:
+                    entities.append(Firefly(stats[0], stats[1], stats[2], stats[3]))
+        
+        self._board = Board(board)
+        self._entities = entities
+        print(board)
+        print(entities)
+        self._model = BreachModel(self._board, self._entities)
+        self._view = BreachView(self._root, self._board.get_dimensions(), save_callback=self._save_game, load_callback=self._load_game, turn_callback='c')
+        self.redraw()
     def _save_game(self) -> None:
         """docstring"""
-        pass
+        file = filedialog.asksaveasfilename()
+        print(file)
+
+
     def _load_game(self) -> None:
         """docstring"""
-        pass
+        file_path = filedialog.askopenfilename(initialdir='')
+        self.load_model(file_path)
+        #self.load_model(file_path)
     def _end_turn(self) -> None:
         """docstring"""
-        pass
+        self._model.end_turn()
+        self.redraw()
     def _handle_click(self, position: tuple[int, int]) -> None:
         """docstring"""
         pass
@@ -836,26 +975,24 @@ class IntoTheBreach():
 
 def play_game(root: tk.Tk, file_path: str) -> None:
     """The function that runs the game"""
-    board = Board([['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', ' ', ' ', ' ', ' ', '3', ' ', ' ', ' ', 'M'], ['M', ' ', ' ', ' ', '3', 'M', ' ', ' ', ' ', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', '2', ' ', ' ', ' ', 'M', 'M', 'M', 'M', 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']])
-    entities = [TankMech((1, 1), 5, 3, 3), TankMech((1, 2), 3, 3, 3), HealMech((1, 3), 2, 3, 2), Scorpion((8, 8), 3, 3, 2), Firefly((8, 7), 2, 2, 1), Firefly((7, 6), 1, 1, 1)]
-    #entities = [HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), HealMech((1, 3), 2, 3, 2), Scorpion((8, 8), 3, 3, 2), Firefly((8, 7), 2, 2, 1), Firefly((7, 6), 1, 1, 1)]
-    model = BreachModel(board, entities)
-    root.title(BANNER_TEXT)
-    root.geometry(f'{GRID_SIZE+SIDEBAR_WIDTH}x{GRID_SIZE+BANNER_HEIGHT+CONTROL_BAR_HEIGHT}')
-    #root.geometry('750x625')
-    banner = tk.Label(root, text=BANNER_TEXT, font=BANNER_FONT)
-    banner.pack(fill=tk.X)
-    g = GameGrid(root, board.get_dimensions(), (GRID_SIZE, GRID_SIZE))
-    s = SideBar(root, (len(entities)+1, 4), (SIDEBAR_WIDTH, GRID_SIZE))
-    g.redraw(model.get_board(), model.get_entities())
-    g.bind_click_callback(g._butt)
-    s.display(model.get_entities())
+    file = open(file_path, 'r')
+    #while True:
+    controller = IntoTheBreach(root, file)
+    #controller.set_focused_entity(TankMech((1, 2), 3, 3, 3))
+    #controller.load_model('C:/Users/Fazell/OneDrive/Documents/Semester 1/CSSE1001/Assessment 2/a2/levels/level1.txt')
+    controller.redraw()
+
+
+
+
+
+
     root.mainloop()
 
 def main() -> None:
     """The main function"""
     root = tk.Tk()
-    play_game(root, "a")
+    play_game(root, 'levels/level1.txt')
 
 if __name__ == "__main__":
     main()
