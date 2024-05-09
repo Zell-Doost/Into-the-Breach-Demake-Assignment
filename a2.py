@@ -187,9 +187,14 @@ class Board():
         ' 4\n6M'
         """
         self._board_str = ""
+        #FIX BAD ITERATOR VARIABLE NAMES
         for k, i in enumerate(self._board):
-            for j in i:
-                self._board_str += j
+            for l, j in enumerate(i):
+                if (k, l) in self.get_buildings():
+                    self._board[k][l] = str(self.get_buildings()[(k, l)])
+                    self._board_str += str(self.get_buildings()[(k, l)])
+                else:
+                    self._board_str += j
             if k < len(self._board)-1:
                 self._board_str += "\n"
         return self._board_str
@@ -530,7 +535,8 @@ class BreachModel():
         building_dict = [self._board.get_buildings()[building_position] for building_position in self._board.get_buildings() if not self._board.get_buildings()[building_position].is_destroyed()]
         building_check = bool(len(building_dict) == 0)
         entity_list = [str(entity)[0] for entity in self._entities if entity.is_alive()]
-        mech_dead_check = bool(TANK_SYMBOL not in entity_list or HEAL_SYMBOL not in entity_list)
+        mech_dead_check = bool(TANK_SYMBOL not in entity_list and HEAL_SYMBOL not in entity_list)
+        print(entity_list)
         return building_check or mech_dead_check
     def entity_positions(self) -> dict[tuple[int, int], Entity]:
         """docstring"""
@@ -676,7 +682,6 @@ class GameGrid(AbstractGrid):
         for row in range(board.get_dimensions()[0]):
             for column in range(board.get_dimensions()[1]):
 
-                print("TEST")
                 #Check for highlighted tiles
                 if (row, column) in highlighted:
                     if movement:
@@ -714,8 +719,11 @@ class GameGrid(AbstractGrid):
     click_callback: Callable[[tuple[int, int]], None]
     ) -> None:
         """docstring"""
-        self.bind('<Button-1>', call_back)
-        self.bind('<Button-2>', call_back)
+        position_action = lambda event, call_back=click_callback: call_back(self.pixel_to_cell(event.x, event.y))
+        self.bind('<Button-1>', position_action)
+        self.bind('<Button-2>', click_callback)
+
+
 
     #THIS FUNCTION IS FOR TESTING, REMOVE LATER
     def _mouse_position_to_entity(self, position: tuple[int, int]) -> Optional[Entity]:
@@ -744,6 +752,7 @@ class SideBar(AbstractGrid):
     ) -> None:
         """docstring"""
         super().__init__(master, dimensions, size)
+        #NEXT 2 LINES DECLARED IN ABSTRACT GRID, SO FIX THIS
         self._dimensions = dimensions
         self._size = size
     def display(self, entities: list[Entity]) -> None:
@@ -781,12 +790,12 @@ class ControlBar(tk.Frame):
         self._load_callback = load_callback
         self._turn_callback = turn_callback
         self.pack(side=tk.BOTTOM)
-        padding = (GRID_SIZE+SIDEBAR_WIDTH)/9
+        padding = (GRID_SIZE+SIDEBAR_WIDTH)/9 #THIS IS WRONG METHOD OF DOING THIS, FIX
         button_texts = [SAVE_TEXT, LOAD_TEXT, TURN_TEXT]
         button_commands = [save_callback, self._load_callback, turn_callback]
         for text, command in zip(button_texts, button_commands):
             button = tk.Button(self, text=text, command=command)
-            button.pack(side=tk.LEFT, expand=tk.TRUE, padx=padding)
+            button.pack(side=tk.LEFT, expand=tk.TRUE, padx=padding) #PADDING IS INCORRECT I THINK
 
 
 
@@ -821,7 +830,7 @@ class BreachView():
     movement: bool = False
     ) -> None:
         """docstring"""
-        self._game_grid.redraw(board, entities, highlighted, movement)
+        self._game_grid.redraw(board, entities, highlighted=highlighted, movement=movement)
         self._side_bar.display(entities)
 
 
@@ -849,7 +858,7 @@ class IntoTheBreach():
             elif line != '\n': #take entities
                 stats_str = line[2:].split(',')
                 stats = [(int(stats_str[0]), int(stats_str[1])), int(stats_str[2]), int(stats_str[3]), int(stats_str[4].replace('\n', ''))]
-                print(stats)
+                # print(stats)
                 if line[0] == TANK_SYMBOL:
                     entities.append(TankMech(stats[0], stats[1], stats[2], stats[3]))
                 elif line[0] == HEAL_SYMBOL:
@@ -858,26 +867,28 @@ class IntoTheBreach():
                     entities.append(Scorpion(stats[0], stats[1], stats[2], stats[3]))
                 elif line[0] == FIREFLY_SYMBOL:
                     entities.append(Firefly(stats[0], stats[1], stats[2], stats[3]))
-        print(board)
-        print(entities)
+        game_file.close()
+        # print(board)
+        # print(entities)
         self._board = Board(board)
         self._entities = entities
         self._model = BreachModel(self._board, self._entities)
 
-        #self._view = BreachView(root, self._board.get_dimensions(), 'a', self._load_game, 'c')
-        self._view = BreachView(self._root, self._board.get_dimensions(), save_callback=self._save_game, load_callback=self._load_game, turn_callback=self._end_turn)
+        
+        self._view = BreachView(self._root, self._model.get_board().get_dimensions(), save_callback=self._save_game, load_callback=self._load_game, turn_callback=self._end_turn)
         self._focused_entity = 0
         self._highlighted = []
         self._moving = False
+        self._view.bind_click_callback(click_callback=self._handle_click)
         
         
 
     def redraw(self) -> None:
         """docstring"""
-        print('---------------------------------------------------------------')
+        #print('---------------------------------------------------------------')
         print(self._model.get_board())
         self._view.redraw(self._model.get_board(), self._model.get_entities(), highlighted=self._highlighted, movement=self._moving)
-
+        print("TEST")
     def set_focused_entity(self, entity: Optional[Entity]) -> None:
         """docstring"""
 
@@ -886,7 +897,7 @@ class IntoTheBreach():
         #self._view.bind_click_callback(self._find_focused_entity)
         if entity:
             self._focused_entity = entity
-            if entity.is_active():
+            if entity.is_friendly() and entity.is_active():
                 self._moving = True
                 self._highlighted = self._model.get_valid_movement_positions(entity)
             else:
@@ -894,76 +905,106 @@ class IntoTheBreach():
                 self._highlighted = entity.get_targets()
         else:
             self._focused_entity = None
-            self.highlighted = []
-
-
-    def _find_mouse_position(self, event) -> Optional[Entity]:
-        """docstring"""
-        mouse_position = event.x, event.y
-        return mouse_position
-
-    def _mouse_position_to_entity(self, position: tuple[int, int]) -> Optional[Entity]:
-        """docstring"""
-        entity_dict = {entity.get_position(): entity for entity in self._model.get_entities()}
-        if position in entity_dict:
-            return entity_dict[position]
-
+            self._highlighted = []
 
     def make_move(self, position: tuple[int, int]) -> None:
         """docstring"""
         if position in self._highlighted:
-            self._focused_entity.set_position(position)
-
+            self._model.attempt_move(self._focused_entity, position)
 
     def load_model(self, file_path: str) -> None:
         """docstring"""
-        file = open(file_path, 'r')
-        board = []
-        entities = []
-        is_on_board = True
-        for line in file:
-            if line == '\n':
-                is_on_board = False
-            if is_on_board: #take board
-                board.append([char for char in line if char != '\n'])
-            elif line != '\n': #take entities
-                #stats = [(int(line[2]), int(line[4])), int(line[6]), int(line[8]), int(line[10])]
-                stats_str = line[2:].split(',')
-                stats = [(int(stats_str[0]), int(stats_str[1])), int(stats_str[2]), int(stats_str[3]), int(stats_str[4].replace('\n', ''))]
-                if line[0] == TANK_SYMBOL:
-                    entities.append(TankMech(stats[0], stats[1], stats[2], stats[3]))
-                elif line[0] == HEAL_SYMBOL:
-                    entities.append(HealMech(stats[0], stats[1], stats[2], stats[3]))
-                elif line[0] == SCORPION_SYMBOL:
-                    entities.append(Scorpion(stats[0], stats[1], stats[2], stats[3]))
-                elif line[0] == FIREFLY_SYMBOL:
-                    entities.append(Firefly(stats[0], stats[1], stats[2], stats[3]))
+        if file_path:
+            file = open(file_path, 'r')
+            board = []
+            entities = []
+            is_on_board = True
+            for line in file:
+                if line == '\n':
+                    is_on_board = False
+                if is_on_board: #take board
+                    board.append([char for char in line if char != '\n'])
+                elif line != '\n': #take entities
+
+                    #stats = [(int(line[2]), int(line[4])), int(line[6]), int(line[8]), int(line[10])]
+                    stats_str = line[2:].split(',')
+                    stats = [(int(stats_str[0]), int(stats_str[1])), int(stats_str[2]), int(stats_str[3]), int(stats_str[4].replace('\n', ''))]
+                    if line[0] == TANK_SYMBOL:
+                        entities.append(TankMech(stats[0], stats[1], stats[2], stats[3]))
+                    elif line[0] == HEAL_SYMBOL:
+                        entities.append(HealMech(stats[0], stats[1], stats[2], stats[3]))
+                    elif line[0] == SCORPION_SYMBOL:
+                        entities.append(Scorpion(stats[0], stats[1], stats[2], stats[3]))
+                    elif line[0] == FIREFLY_SYMBOL:
+                        entities.append(Firefly(stats[0], stats[1], stats[2], stats[3]))
+            file.close()
         
-        self._board = Board(board)
-        self._entities = entities
-        print(board)
-        print(entities)
-        self._model = BreachModel(self._board, self._entities)
-        self._view = BreachView(self._root, self._board.get_dimensions(), save_callback=self._save_game, load_callback=self._load_game, turn_callback='c')
-        self.redraw()
+            self._board = Board(board)
+            self._entities = entities
+            self._model = BreachModel(self._board, self._entities)
+            self._view = BreachView(self._root, self._board.get_dimensions(), save_callback=self._save_game, load_callback=self._load_game, turn_callback=self._end_turn)
     def _save_game(self) -> None:
         """docstring"""
-        file = filedialog.asksaveasfilename()
-        print(file)
+        if self._model.ready_to_save():
+            file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=(("text file", "*.txt"), ("All Files", "*.*"))) #Parameters gotten from https://stackoverflow.com/questions/16089674/restricting-the-file-extension-saved-when-using-tkfiledialog-asksaveasfile
+            if file_path:
+                save_board = str(self._board)
+                #IN THIS LINE, SET ENTITIES SAVE THING
+                save_entities = [str(entity) for entity in self._entities if entity.is_alive()]
+                save_file = open(file_path, 'w')
+                save_file.write(f'{save_board}\n')
+                for save_entity in save_entities:
+                    save_file.write(f'\n{save_entity}')
+                save_file.close()
+        else:
+            tk.messagebox.showerror(title=INVALID_SAVE_TITLE, message=INVALID_SAVE_MESSAGE)
+
+
+
+
+        #USED FOR TESTING, REMOVE LATER
+        # self._model.get_board().get_buildings()[(2, 5)].damage(1)
+        # print(self._model.get_board().get_buildings()[(2, 5)])
+        # print(self._model._board)
+        # #print(self._model.get_board())
+        # self.redraw()
 
 
     def _load_game(self) -> None:
         """docstring"""
         file_path = filedialog.askopenfilename(initialdir='')
+        #dir_files = 
         self.load_model(file_path)
-        #self.load_model(file_path)
+        print('---------------------------------------------------------------')
+        print(self._model.get_board())
+        print(self._model.get_entities())
+        print('---------------------------------------------------------------')
+        self.redraw()
     def _end_turn(self) -> None:
         """docstring"""
         self._model.end_turn()
+        self._focused_entity = None
+        self._highlighted = []
         self.redraw()
+        #NEED TO CHECK FOR WIN OR LOSS
+        play_again = None
+        #print(self._model.has_lost())
+        if self._model.has_lost():
+            play_again = tk.messagebox.askyesno(title='You Lost!', message=f'You Lost! {PLAY_AGAIN_TEXT}')
+        if self._model.has_won():
+            play_again = tk.messagebox.askyesno(title='You Win!', message=f'You Win! {PLAY_AGAIN_TEXT}')
+
+
     def _handle_click(self, position: tuple[int, int]) -> None:
         """docstring"""
-        pass
+        entity_dict = {entity.get_position(): entity for entity in self._model.get_entities()} #MADE ENTITY DICT AGAIN, NEED BETTER WAY
+        if position in entity_dict:
+            self.set_focused_entity(entity_dict[position])
+        else:
+            if position in self._highlighted:
+                self.make_move(position)
+            self.set_focused_entity(None)
+        self.redraw()
 
 
 
@@ -978,8 +1019,6 @@ def play_game(root: tk.Tk, file_path: str) -> None:
     file = open(file_path, 'r')
     #while True:
     controller = IntoTheBreach(root, file)
-    #controller.set_focused_entity(TankMech((1, 2), 3, 3, 3))
-    #controller.load_model('C:/Users/Fazell/OneDrive/Documents/Semester 1/CSSE1001/Assessment 2/a2/levels/level1.txt')
     controller.redraw()
 
 
@@ -996,3 +1035,9 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+#NEED TO FIX:
+    #LOAD GAME NOT REDRAWING
+    #START NEW GAME AFTER WIN OR LOSE
+    #LOAD I/O ERROR STUFF
