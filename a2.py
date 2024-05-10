@@ -311,6 +311,8 @@ class Entity():
             self._health -= damage
             if self._health < 0:
                 self._health = 0
+            elif self._health > 9:
+                self._health = 9
             self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
             self._entity_repr = f'{self._entity_name}({self._position}, {self._health}, {self._speed}, {self._strength})'
     def is_alive(self) -> bool:
@@ -325,7 +327,7 @@ class Entity():
         return targets
     def attack(self, entity: "Entity") -> None:
         """docstring"""
-        if self.get_strength() < 0 and not entity.is_friendly(): #might be a better way of doing this
+        if self.get_strength() < 0 and not entity.is_friendly(): #MIGHT BE A BETTER WAY OF DOING THIS (maybe self.get_strength() > 0 or entity.is_friendly(): leads to damage???)
             return
         entity.damage(self.get_strength())
 
@@ -641,8 +643,9 @@ class BreachModel():
         self._entities = entity_list
         #Attack buildings
         for target in targets:
-            if target in building_dict:
+            if target in building_dict and entity.is_alive():
                 building_dict[target].damage(entity.get_strength())
+
     def end_turn(self) -> None:
         """docstring"""
         #REPEATED LIST CREATION, NEED TO FIX
@@ -792,7 +795,7 @@ class ControlBar(tk.Frame):
         self.pack(side=tk.BOTTOM)
         padding = (GRID_SIZE+SIDEBAR_WIDTH)/9 #THIS IS WRONG METHOD OF DOING THIS, FIX
         button_texts = [SAVE_TEXT, LOAD_TEXT, TURN_TEXT]
-        button_commands = [save_callback, self._load_callback, turn_callback]
+        button_commands = [save_callback, load_callback, turn_callback]
         for text, command in zip(button_texts, button_commands):
             button = tk.Button(self, text=text, command=command)
             button.pack(side=tk.LEFT, expand=tk.TRUE, padx=padding) #PADDING IS INCORRECT I THINK
@@ -810,7 +813,7 @@ class BreachView():
     ) -> None:
         """docstring"""
         root.title(BANNER_TEXT)
-        root.geometry(f'{GRID_SIZE+SIDEBAR_WIDTH}x{GRID_SIZE+BANNER_HEIGHT+CONTROL_BAR_HEIGHT}') #SHOULD NOT BE -10, NEED TO FIX THIS
+        root.geometry(f'{GRID_SIZE+SIDEBAR_WIDTH}x{GRID_SIZE+BANNER_HEIGHT+CONTROL_BAR_HEIGHT}')
         #root.geometry('750x625')
         banner = tk.Label(root, text=BANNER_TEXT, font=BANNER_FONT)
         banner.pack(fill=tk.X)
@@ -846,40 +849,8 @@ class IntoTheBreach():
 
 
         self._root = root
-
-        board = []
-        entities = []
-        is_on_board = True
-        for line in game_file:
-            if line == '\n':
-                is_on_board = False
-            if is_on_board: #take board
-                board.append([char for char in line if char != '\n'])
-            elif line != '\n': #take entities
-                stats_str = line[2:].split(',')
-                stats = [(int(stats_str[0]), int(stats_str[1])), int(stats_str[2]), int(stats_str[3]), int(stats_str[4].replace('\n', ''))]
-                # print(stats)
-                if line[0] == TANK_SYMBOL:
-                    entities.append(TankMech(stats[0], stats[1], stats[2], stats[3]))
-                elif line[0] == HEAL_SYMBOL:
-                    entities.append(HealMech(stats[0], stats[1], stats[2], stats[3]))
-                elif line[0] == SCORPION_SYMBOL:
-                    entities.append(Scorpion(stats[0], stats[1], stats[2], stats[3]))
-                elif line[0] == FIREFLY_SYMBOL:
-                    entities.append(Firefly(stats[0], stats[1], stats[2], stats[3]))
-        game_file.close()
-        # print(board)
-        # print(entities)
-        self._board = Board(board)
-        self._entities = entities
-        self._model = BreachModel(self._board, self._entities)
-
+        self.load_model(game_file)
         
-        self._view = BreachView(self._root, self._model.get_board().get_dimensions(), save_callback=self._save_game, load_callback=self._load_game, turn_callback=self._end_turn)
-        self._focused_entity = 0
-        self._highlighted = []
-        self._moving = False
-        self._view.bind_click_callback(click_callback=self._handle_click)
         
         
 
@@ -914,8 +885,10 @@ class IntoTheBreach():
 
     def load_model(self, file_path: str) -> None:
         """docstring"""
+        self._current_file_path = file_path
         if file_path:
             file = open(file_path, 'r')
+            self._game_file = file
             board = []
             entities = []
             is_on_board = True
@@ -927,6 +900,7 @@ class IntoTheBreach():
                 elif line != '\n': #take entities
 
                     #stats = [(int(line[2]), int(line[4])), int(line[6]), int(line[8]), int(line[10])]
+                    #THIS IS REPEATED IN __INIT__, SO MAKE A HELPER FUNCTION
                     stats_str = line[2:].split(',')
                     stats = [(int(stats_str[0]), int(stats_str[1])), int(stats_str[2]), int(stats_str[3]), int(stats_str[4].replace('\n', ''))]
                     if line[0] == TANK_SYMBOL:
@@ -943,6 +917,11 @@ class IntoTheBreach():
             self._entities = entities
             self._model = BreachModel(self._board, self._entities)
             self._view = BreachView(self._root, self._board.get_dimensions(), save_callback=self._save_game, load_callback=self._load_game, turn_callback=self._end_turn)
+            self._focused_entity = 0
+            self._highlighted = []
+            self._moving = False
+            self._view.bind_click_callback(click_callback=self._handle_click)
+            self.redraw()
     def _save_game(self) -> None:
         """docstring"""
         if self._model.ready_to_save():
@@ -979,7 +958,6 @@ class IntoTheBreach():
         print(self._model.get_board())
         print(self._model.get_entities())
         print('---------------------------------------------------------------')
-        self.redraw()
     def _end_turn(self) -> None:
         """docstring"""
         self._model.end_turn()
@@ -987,12 +965,20 @@ class IntoTheBreach():
         self._highlighted = []
         self.redraw()
         #NEED TO CHECK FOR WIN OR LOSS
-        play_again = None
-        #print(self._model.has_lost())
+        play_again = self._game_over_box()
+        if play_again != None:
+            if play_again:
+                self.load_model(self._current_file_path)
+            else:
+                self._root.destroy()
+
+    def _game_over_box(self):
         if self._model.has_lost():
-            play_again = tk.messagebox.askyesno(title='You Lost!', message=f'You Lost! {PLAY_AGAIN_TEXT}')
-        if self._model.has_won():
-            play_again = tk.messagebox.askyesno(title='You Win!', message=f'You Win! {PLAY_AGAIN_TEXT}')
+            return tk.messagebox.askyesno(title='You Lost!', message=f'You Lost! {PLAY_AGAIN_TEXT}')
+        elif self._model.has_won():
+            return tk.messagebox.askyesno(title='You Win!', message=f'You Win! {PLAY_AGAIN_TEXT}')
+        else:
+            return None
 
 
     def _handle_click(self, position: tuple[int, int]) -> None:
@@ -1016,10 +1002,9 @@ class IntoTheBreach():
 
 def play_game(root: tk.Tk, file_path: str) -> None:
     """The function that runs the game"""
-    file = open(file_path, 'r')
     #while True:
-    controller = IntoTheBreach(root, file)
-    controller.redraw()
+    controller = IntoTheBreach(root, file_path)
+    #controller.redraw()
 
 
 
@@ -1039,5 +1024,5 @@ if __name__ == "__main__":
 
 #NEED TO FIX:
     #LOAD GAME NOT REDRAWING
-    #START NEW GAME AFTER WIN OR LOSE
     #LOAD I/O ERROR STUFF
+    #ENEMIES ATTACKING THROUGH WALLS? ALLOWED OR NOT?
