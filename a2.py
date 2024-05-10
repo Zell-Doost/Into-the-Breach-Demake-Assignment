@@ -568,6 +568,7 @@ class BreachModel():
     def ready_to_save(self) -> bool:
         """docstring"""
         return not self._is_move_made
+
     def assign_objectives(self) -> None:
         """docstring"""
         mechs = [entity for entity in self._entities if str(entity)[0] in [MECH_SYMBOL, TANK_SYMBOL, HEAL_SYMBOL] and entity.is_alive()]
@@ -575,9 +576,11 @@ class BreachModel():
         enemies = [entity for entity in self._entities if str(entity)[0] in [ENEMY_SYMBOL, SCORPION_SYMBOL, FIREFLY_SYMBOL] and entity.is_alive()]
         for enemy in enemies:
             enemy.update_objective(mechs, buildings)
+
     def move_enemies(self) -> None:
         """docstring"""
         #REPEATED CODE, MAKE SURE TO FIX THAT
+        self.assign_objectives()
         mechs = [entity for entity in self.get_entities() if str(entity)[0] in [MECH_SYMBOL, TANK_SYMBOL, HEAL_SYMBOL] and entity.is_alive()]
         buildings = self._board.get_buildings()
         enemies = [entity for entity in self.get_entities() if str(entity)[0] in [ENEMY_SYMBOL, SCORPION_SYMBOL, FIREFLY_SYMBOL] and entity.is_alive()]
@@ -615,15 +618,21 @@ class BreachModel():
             target = enemy.get_objective()
             distance = None
             #PROBABLY NOT OPTIMISED AND KIND OF MESSY, TRY TO DO WITH ONE FOR LOOP
+            
             possible_moves = self.get_valid_movement_positions(enemy)
             for possible_move in possible_moves:
-                distance_check = get_distance(self, enemy.get_position(), possible_move)
-                if (distance == None or distance < distance_check) and distance_check > 0:
+                distance_check = get_distance(self, target, possible_move)
+                if str(enemy)[0] == 'S':
+                    print(f'Scorpion Distance_Check: {distance_check}')
+                if (distance == None or distance > distance_check) and distance_check > 0:
                     distance = distance_check
             if distance != None:
                 for possible_move in possible_moves:
-                    if get_distance(self, enemy.get_position(), possible_move) == distance:
+                    if get_distance(self, target, possible_move) == distance:
                         enemy.set_position(possible_move)
+            if str(enemy)[0] == 'S':
+                print(f'Scorpion Target: {target}')
+                print(f'Scorpion distance to target: {distance}')
 
 
 
@@ -1023,6 +1032,8 @@ if __name__ == "__main__":
 
 
 #NEED TO FIX:
+    #LEVEL 2 NOT LOADING CORRECTLY
     #LOAD GAME NOT REDRAWING
     #LOAD I/O ERROR STUFF
+    #CONTROL BAR WIDGET WIDTH IS 657 WHEN IT SHOULD BE 750
     #ENEMIES ATTACKING THROUGH WALLS? ALLOWED OR NOT?
