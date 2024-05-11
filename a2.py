@@ -195,7 +195,7 @@ class Board():
                     self._board_str += str(self.get_buildings()[(row_i, column_i)])
                 else:
                     self._board_str += tile
-            if column_i < len(self._board)-1:
+            if row_i < len(self._board)-1:
                 self._board_str += "\n"
         return self._board_str
     def get_dimensions(self) -> tuple[int, int]:
@@ -769,6 +769,7 @@ class SideBar(AbstractGrid):
         self._size = size
     def display(self, entities: list[Entity]) -> None:
         """docstring"""
+        self.set_dimensions((len(entities)+1, 4))
         self.pack(side=tk.LEFT, anchor=tk.N)
         self.clear()
         display = None
@@ -829,15 +830,16 @@ class BreachView():
     turn_callback: Optional[Callable[[], None]] = None, 
     ) -> None:
         """docstring"""
-        root.title(BANNER_TEXT)
-        root.geometry(f'{GRID_SIZE+SIDEBAR_WIDTH}x{GRID_SIZE+BANNER_HEIGHT+CONTROL_BAR_HEIGHT}')
+        self._root = root
+        self._root.title(BANNER_TEXT)
+        self._root.geometry(f'{GRID_SIZE+SIDEBAR_WIDTH}x{GRID_SIZE+BANNER_HEIGHT+CONTROL_BAR_HEIGHT}')
         #root.geometry('750x625')
-        banner = tk.Label(root, text=BANNER_TEXT, font=BANNER_FONT)
+        banner = tk.Label(self._root, text=BANNER_TEXT, font=BANNER_FONT)
         banner.pack(fill=tk.X)
-        self._game_grid = GameGrid(root, board_dims, (GRID_SIZE, GRID_SIZE))
+        self._game_grid = GameGrid(self._root, board_dims, (GRID_SIZE, GRID_SIZE))
 
-        self._side_bar = SideBar(root, (7, 4), (SIDEBAR_WIDTH, GRID_SIZE))#2ND ARG SHOULD BE AMOUNT OF ENTITIES+1 instead of 7
-        self._control_bar = ControlBar(root, save_callback, load_callback, turn_callback)
+        self._side_bar = SideBar(self._root, (7, 4), (SIDEBAR_WIDTH, GRID_SIZE))#2ND ARG SHOULD BE AMOUNT OF ENTITIES+1 instead of 7
+        self._control_bar = ControlBar(self._root, save_callback, load_callback, turn_callback)
     def bind_click_callback(self, 
     click_callback: Callable[[tuple[int, int]], None]
     ) -> None:
@@ -1040,7 +1042,6 @@ if __name__ == "__main__":
 
 
 #NEED TO FIX:
-    #GRADESCOPE SAYS HEALTH ON THE SIDEBAR AFTER 6 TURNS IS NOT 1 EVEN THOUGH IT IS
     #LEVEL 2 NOT LOADING CORRECTLY
     #LOAD GAME AS WELL AS PLAY AGAIN NOT REDRAWING
     #LOAD I/O ERROR STUFF
