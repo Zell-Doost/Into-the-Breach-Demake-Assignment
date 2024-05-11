@@ -158,14 +158,14 @@ class Board():
         self._board = board
         self._board_object_dictionary = {TILE_SYMBOL: Tile(), GROUND_SYMBOL: Ground(), MOUNTAIN_SYMBOL: Mountain()}
         self._object_board = []
-        for row_i, row in enumerate(self._board):
+        for row_index, row in enumerate(self._board):
             self._object_board.append([])
-            for j in row:
-                if j.isdigit():
-                    self._object_board[row_i].append(Building(int(j)))
+            for tile in row:
+                if tile.isdigit():
+                    self._object_board[row_index].append(Building(int(tile)))
                 else:
-                    self._object_board[row_i].append(self._board_object_dictionary[j])
-        self._board_repr = f'Board({board})'
+                    self._object_board[row_index].append(self._board_object_dictionary[tile])
+        self._board_repr = f'Board({self._board})'
     def __repr__(self):
         """Returns a machine readable string that could be used to construct an identical instance of the board.
 
@@ -188,14 +188,14 @@ class Board():
         """
         self._board_str = ""
         #FIX BAD ITERATOR VARIABLE NAMES
-        for k, i in enumerate(self._board):
-            for l, j in enumerate(i):
-                if (k, l) in self.get_buildings():
-                    self._board[k][l] = str(self.get_buildings()[(k, l)])
-                    self._board_str += str(self.get_buildings()[(k, l)])
+        for row_i, row in enumerate(self._board):
+            for column_i, tile in enumerate(row):
+                if (row_i, column_i) in self.get_buildings():
+                    self._board[row_i][column_i] = str(self.get_buildings()[(row_i, column_i)])
+                    self._board_str += str(self.get_buildings()[(row_i, column_i)])
                 else:
-                    self._board_str += j
-            if k < len(self._board)-1:
+                    self._board_str += tile
+            if column_i < len(self._board)-1:
                 self._board_str += "\n"
         return self._board_str
     def get_dimensions(self) -> tuple[int, int]:
@@ -802,12 +802,20 @@ class ControlBar(tk.Frame):
         self._load_callback = load_callback
         self._turn_callback = turn_callback
         self.pack(side=tk.BOTTOM)
-        padding = (GRID_SIZE+SIDEBAR_WIDTH)/9 #THIS IS WRONG METHOD OF DOING THIS, FIX
+        # self.rowconfigure(1, weight=1)
+        # self.columnconfigure(1, weight=1)
+        padding = (GRID_SIZE+SIDEBAR_WIDTH)/7 #THIS IS WRONG METHOD OF DOING THIS, FIX
+        self.grid_columnconfigure((0,1,2), weight=1, uniform="column", pad=padding)
         button_texts = [SAVE_TEXT, LOAD_TEXT, TURN_TEXT]
         button_commands = [save_callback, load_callback, turn_callback]
-        for text, command in zip(button_texts, button_commands):
-            button = tk.Button(self, text=text, command=command)
-            button.pack(side=tk.LEFT, expand=tk.TRUE, padx=padding) #PADDING IS INCORRECT I THINK
+        # for text, command in zip(button_texts, button_commands):
+        #     button = tk.Button(self, text=text, command=command)
+        #     button.pack(side=tk.LEFT, expand=tk.TRUE, padx=padding) #PADDING IS INCORRECT I THINK
+        # button = tk.Button(self, text=TURN_TEXT, command=turn_callback)
+        # button.pack(side=tk.LEFT, expand=tk.TRUE)
+        self._buttons = [tk.Button(self, text=button[0], command=button[1]) for button in zip(button_texts, button_commands)]
+        for i, button in enumerate(self._buttons):
+            button.grid(column=i, row=0)
 
 
 
@@ -1032,8 +1040,9 @@ if __name__ == "__main__":
 
 
 #NEED TO FIX:
+    #GRADESCOPE SAYS HEALTH ON THE SIDEBAR AFTER 6 TURNS IS NOT 1 EVEN THOUGH IT IS
     #LEVEL 2 NOT LOADING CORRECTLY
-    #LOAD GAME NOT REDRAWING
+    #LOAD GAME AS WELL AS PLAY AGAIN NOT REDRAWING
     #LOAD I/O ERROR STUFF
     #CONTROL BAR WIDGET WIDTH IS 657 WHEN IT SHOULD BE 750
     #ENEMIES ATTACKING THROUGH WALLS? ALLOWED OR NOT?
