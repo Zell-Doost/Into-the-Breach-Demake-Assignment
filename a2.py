@@ -12,13 +12,14 @@ from typing import Optional, Callable
 
 #################################### MODEL #####################################
 class Tile():
-    """Tile Class"""
+    """A class that creates the for all tiles"""
     def __init__(self) -> None:
         """Initialises the attributes of the base tile class' objects"""
         self._tile_repr = f'{TILE_NAME}()'
         self._tile_str = TILE_SYMBOL
         self._tile_name = TILE_NAME
         self._can_block = False
+
     def __repr__(self) -> str:
         """Returns a machine readable string that could be used to construct an identical instance of the tile.
 
@@ -31,6 +32,7 @@ class Tile():
         Mountain()
         """
         return self._tile_repr
+    
     def __str__(self) -> str:
         """Returns the character representing the type of the tile.
 
@@ -43,6 +45,7 @@ class Tile():
         ' '
         """
         return self._tile_str
+    
     def get_tile_name(self) -> str:
         """Returns the name of the type of the tile.
 
@@ -55,6 +58,7 @@ class Tile():
         'Mountain'
         """
         return self._tile_name
+    
     def is_blocking(self) -> bool:
         """Returns True only when the tile is blocking.
 
@@ -69,7 +73,7 @@ class Tile():
         return self._can_block
 
 class Ground(Tile):
-    """Ground Class"""
+    """A class that creates the tile object"""
     def __init__(self) -> None:
         """Initialises the attributes for a ground object"""
         self._tile_repr = f'{GROUND_NAME}()'
@@ -78,7 +82,7 @@ class Ground(Tile):
         self._can_block = False
 
 class Mountain(Tile):
-    """Mountain Class"""
+    """A class that creates the mountain object"""
     def __init__(self) -> None:
         """Initialises the attributes for a Mountain object"""
         self._tile_repr = f'{MOUNTAIN_NAME}()'
@@ -87,7 +91,7 @@ class Mountain(Tile):
         self._can_block = True
    
 class Building(Tile):
-    """Building Class"""
+    """A class that creates the building object with health"""
     def __init__(self, initial_health: int) -> None:
         """Initialises the attributes for a Building object
 
@@ -97,8 +101,9 @@ class Building(Tile):
         self._tile_repr = f'{BUILDING_NAME}({initial_health})'
         self._tile_name = BUILDING_NAME
         self._health = initial_health
-        self._can_block = self._health > 1 #can block if not destroyed
+        self._can_block = not self.is_destroyed() #can block if not destroyed
         self._tile_str = str(self._health)
+    
     def is_destroyed(self) -> bool:
         """Returns True only when the building is destroyed, and False if not.
 
@@ -110,10 +115,10 @@ class Building(Tile):
         >>>building.is_destroyed()
         True
         """
-        self._can_block = self._health > 1 
         return self._health < 1 #building is destroyed when health is below 1
+    
     def damage(self, damage: int) -> None:
-        """Reduces the health of the building by the amount specified. Do nothing is the building is already destroyed.
+        """Reduces the health of the building by the amount specified. Do nothing is the building is already destroyed. If the damage is negative, then heal the building's health.
 
         Arguments: 
             The amount of damage dealt to the building.
@@ -140,11 +145,12 @@ class Building(Tile):
                 self._health = 0
             elif self._health > 9:
                 self._health = 9
+            self._can_block = not self.is_destroyed()
         self._tile_str = str(self._health)
         self._tile_repr = f'{BUILDING_NAME}({self._health})'
 
 class Board():
-    """Board Class"""
+    """A class that creates the board that will be in use during gameplay"""
     def __init__(self, board: list[list[str]]) -> None:
         """Initialises the attributes for a Board object
         
@@ -166,6 +172,7 @@ class Board():
                 else:
                     self._object_board[row_index].append(self._board_object_dictionary[tile])
         self._board_repr = f'Board({self._board})'
+    
     def __repr__(self):
         """Returns a machine readable string that could be used to construct an identical instance of the board.
 
@@ -175,6 +182,7 @@ class Board():
         Board([[' ', '4'], ['6', 'M']])
         """
         return self._board_repr
+    
     def __str__(self) -> str:
         """Returns a string representation of the board.
         
@@ -187,7 +195,6 @@ class Board():
         ' 4\n6M'
         """
         self._board_str = ""
-        #FIX BAD ITERATOR VARIABLE NAMES
         for row_i, row in enumerate(self._board):
             for column_i, tile in enumerate(row):
                 if (row_i, column_i) in self.get_buildings():
@@ -198,6 +205,7 @@ class Board():
             if row_i < len(self._board)-1:
                 self._board_str += "\n"
         return self._board_str
+    
     def get_dimensions(self) -> tuple[int, int]:
         """Returns the (#rows, #columns) dimensions of the board.
         Preconditions:
@@ -209,6 +217,7 @@ class Board():
         (2, 2)
         """
         return len(self._board), len(self._board[0])
+    
     def get_tile(self, position: tuple[int, int]) -> Tile:
         """Returns the Tile instance located at the given position.
         Arguments:
@@ -221,8 +230,8 @@ class Board():
         >>>board.get_tile((0, 1))
         Building(4)
         """
-        
         return self._object_board[position[0]][position[1]]
+
     def get_buildings(self) -> dict[tuple[int, int], Building]:
         """Returns a dictionary mapping the positions of buildings to the building instances at those positions.
         
@@ -231,15 +240,13 @@ class Board():
         >>>board.get_buildings()
         {(0, 1): Building(4), (1, 0): Building(6)}
         """
-        self._building_dictionary = dict()
+        building_dictionary = dict()
         for row_i, row in enumerate(self._board):
-            for column_i, column in enumerate(row):
-                if column.isdigit():
-                    self._building_dictionary[(row_i, column_i)] = self.get_tile((row_i, column_i))
-        return self._building_dictionary
+            building_dictionary.update({(row_i, column_i): self.get_tile((row_i, column_i)) for column_i, column in enumerate(row) if column.isdigit()})
+        return building_dictionary
 
 class Entity():
-    """Entity Class"""
+    """A class that creates the base for all entity objects, which include mechs and enemies"""
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -251,9 +258,8 @@ class Entity():
         Arguments:
             position: a tuple with 2 ints that determines the starting row and column of the entity.
             initial_health: the starting health of the entity.
-            speed: NEED TO DO THIS PART!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            speed: the number of squares the mech can traverse in one turn.
             strength: the damage or healing power of the entity
-
         """
         self._position = position
         self._health = initial_health
@@ -262,10 +268,25 @@ class Entity():
         self._friendly = False
         self._entity_name = ENTITY_NAME
         self._entity_symbol = ENTITY_SYMBOL
-        #REPEATED CODE, FIX THIS
-        self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
-        print(self._position)
+        self._str_repr_updater()
+    
+    def _str_repr_updater(self):
+        """Updates the entities variables for __repr__ and __str__, to be used whenever the attributes of an entity change
+        
+        >>>e1 = Entitiy((1, 1), 6, 3, 3)
+        >>>e1
+        Entity((1, 1), 6, 3, 3)
+        >>>str(tank)
+        'E,1,1,6,3,3'
+        e1.damage(4) #Has _str_repr_updater inside damage function
+        >>>e1
+        Entity((1, 1), 2, 3, 3)
+        >>>str(e1)
+        'E,1,1,2,3,3'
+        """
         self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._entity_repr = f'{self._entity_name}({self._position}, {self._health}, {self._speed}, {self._strength})'
+
     def __repr__(self) -> str:
         """Returns a machine readable string that could be used to construct an identical instance of the entity.
         
@@ -274,65 +295,206 @@ class Entity():
         Entity((0, 0), 1, 1, 1)
         """
         return self._entity_repr
+
     def __str__(self) -> str:
         """Returns the string representation of the entity, with all of its attributes.
+        Returns:
+            A string containing the entitity's position, health, strength and speed.
         
         >>>e1 = Entity((0,0),1,1,1)
         >>>str(e1)
         'E,0,0,1,1,1'
         """
         return self._entity_str
+
     def get_symbol(self) -> str:
-        """docstring"""
+        """Returns the character that represents the entity type
+        
+        >>>e1 = Entity((0,0),1,1,1)
+        >>>e1.get symbol()
+        'E'
+
+        >>>mech = Mech((0, 0),1,1)
+        >>>mech.get_symbol()
+        'M'
+        """
         return self._entity_symbol
+
     def get_name(self) -> str:
-        """docstring"""
+        """Returns a string of the name of the entity, specifically the class' name.
+
+        >>>e1 = Entity((0,0),1,1,1)
+        >>>e1.get_name()
+        'Entity'
+
+        >>>tank = TankMech((0, 0), 1, 1, 1)
+        >>>tank.get_name()
+        'TankMech'
+        """
         return self._entity_name
+
     def get_position(self) -> tuple[int, int]:
-        """docstring"""
+        """Returns the (row, column) position currently occupied by the entity.
+
+        >>>e1 = Entity((3,5),1,1,1)
+        >>>e1.get_position()
+        (3, 5)
+
+        >>>heal = HealMech((4,2),1,1,1)
+        >>>heal.get_position()
+        (4, 2)
+        """
         return self._position
+
     def set_position(self, position: tuple[int, int]) -> None:
-        """docstring"""
+        """Moves the entity to the specified position.
+        Arguments:
+            The position to place the entity within the grid.
+
+        >>>e1 = Entity((3,5),1,1,1)
+        >>>e1.get_position()
+        (3, 5)
+        >>>e1,set_postion((6, 3))
+        >>>e1.get_position()
+        (6, 3)
+        """
         self._position = position
-        self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
-        self._entity_repr = f'{self._entity_name}({position}, {self._health}, {self._speed}, {self._strength})'
+        self._str_repr_updater()
+        # self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        # self._entity_repr = f'{self._entity_name}({position}, {self._health}, {self._speed}, {self._strength})'
+
     def get_health(self) -> int:
-        """docstring"""
+        """Returns the current health of the entity
+
+        >>>e1 = Entity((1,1),4,1,1)
+        >>>e1.get_health()
+        4
+
+        >>>scorpion = Scorpion((1,1),9,1,1)
+        >>>scorpion.get_health()
+        9
+        """
         return self._health
+
     def get_speed(self) -> int:
-        """docstring"""
+        """Returns the speed of the entity
+
+        >>>e1 = Entity((1,1),1,3,1)
+        >>>e1.get_speed()
+        3
+
+        >>>firefly = Firefly((1,1),1,5,1)
+        >>>firefly.get_speed()
+        5
+        """
         return self._speed
+
     def get_strength(self) -> int:
-        """docstring"""
+        """Returns the strength of the entity
+
+        >>>e1 = Entity((1,1),1,1,2)
+        >>>e1.get_strength()
+        2
+
+        >>>tank = TankMech((1,1),1,1,8)
+        >>>tank.get_strength()
+        8
+        """
         return self._strength
+
     def damage(self, damage: int) -> None:
-        """docstring"""
+        """Reduces the health of the entity by the amount specified. If the damage is negative, then heal the targeted entity. Do nothing if the enemy is dead.
+        Arguments:
+            The amount of damage that will be dealt to the entity.
+
+        >>>tank = TankMech((1, 1), 6, 3, 3)
+        >>>tank
+        TankMech((1, 1), 6, 3, 3)
+        >>>str(tank)
+        'T,1,1,6,3,3'
+        tank.damage(4)
+        >>>tank
+        TankMech((1, 1), 2, 3, 3)
+        >>>str(tank)
+        'T,1,1,2,3,3'
+        """
+        #MIGHT NEED TO REMOVE HEALTH CAP FOR ENTIITIES
+        #MIGHT BE ABLE TO REMOVE self.is_alive() CHECK SINCE DEAD ENEMY WILL NEVER GET TARGETED
         if self.is_alive():
             self._health -= damage
             if self._health < 0:
                 self._health = 0
             elif self._health > 9:
                 self._health = 9
-            self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
-            self._entity_repr = f'{self._entity_name}({self._position}, {self._health}, {self._speed}, {self._strength})'
+            self._str_repr_updater()
+            # self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+            # self._entity_repr = f'{self._entity_name}({self._position}, {self._health}, {self._speed}, {self._strength})'
+    
     def is_alive(self) -> bool:
-        """docstring"""
+        """Returns True if and only if the entity is not destroyed.
+
+        >>>e1 = Entity((1,1),5,3,2)
+        >>>e1.is_alive()
+        True
+        >>>e1.damage(3)
+        >>>e1.is_alive()
+        True
+        >>>e1.damage(5)
+        >>>e1.is_alive()
+        False
+        """
         return self._health > 0
+
     def is_friendly(self) -> bool:
-        """docstring"""
+        """Returns True if and only if the entity is friendly. By default, entities are not friendly.
+
+        >>>e1 = Entity((1,1),1,1,1)
+        >>>e1.is_friendly()
+        False
+        >>>tank = TankMech((1,1),1,1,1)
+        >>>tank.is_friendly()
+        True
+        >>>scorpion = Scorpion((1,1),1,1,1)
+        >>>scorpion.is_friendly()
+        False
+        """
         return self._friendly
+
     def get_targets(self) -> list[tuple[int, int]]:
-        """docstring"""
+        """Returns the positions that would be attacked by the entity during a combat phase. By default, entities target vertically and horizontally adjacent tiles.
+        Returns:
+            A list containing all the positions that the entity will target when attacking.
+
+        >>>e1 = Entity((1,1),1,1,1)
+        [(0,1),(2,1),(1,0),(2,0)]
+        """
         targets = [(self._position[0]-1, self._position[1]), (self._position[0]+1, self._position[1]), (self._position[0], self._position[1]-1), (self._position[0], self._position[1]+1)] #This sucks but I'll fix it later
         return targets
+
     def attack(self, entity: "Entity") -> None:
-        """docstring"""
+        """Applies this entity’s effect to the given entity. By default, entities deal damage equal to the strength of the entity.
+        Arguments:
+            The targeted entity that will recieve damage from this entity.
+
+        >>>e1 = Entity((1,1),1,1,3)
+        >>>e2 = Entity((1,1),5,1,1)
+        >>>e1.get_strength()
+        3
+        >>>e2.get_health()
+        5
+        >>>e1.attack(e2)
+        >>>e2.get_health()
+        2
+        """
         if self.get_strength() < 0 and not entity.is_friendly(): #MIGHT BE A BETTER WAY OF DOING THIS (maybe self.get_strength() > 0 or entity.is_friendly(): leads to damage???)
             return
         entity.damage(self.get_strength())
 
 class Mech(Entity):
-    """docstring for Mech"""
+    """A class that adapts the Entity class to create the base for all friendly entities, which are tanks and healing mechs.
+    Inherits:
+            Entity
+    """
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -340,27 +502,48 @@ class Mech(Entity):
     speed: int, 
     strength: int
     ) -> None:
-        """docstring"""
+        """Initialises an object from the Mech class as well as all of it's children, inheriting certain attributes and methods from Entity.
+        Arguments:
+            position: a tuple with 2 ints that determines the starting row and column of the mech.
+            initial_health: the starting health of the mech.
+            speed: the number of squares the mech can traverse in one turn.
+            strength: the damage or healing power of the mech"""
         super().__init__(position, initial_health, speed, strength)
         self._friendly = True
         self._entity_name = MECH_NAME
         self._entity_symbol = MECH_SYMBOL
-        self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
-        self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+        self._str_repr_updater()
         self._active_state = True
 
     def enable(self) -> None:
-        """docstring"""
+        """Sets the mech to be active, allowing it to move."""
         self._active_state = True
+
     def disable(self) -> None:
-        """docstring"""
+        """Sets the mech to not be active, disallowing it to move."""
         self._active_state = False
+
     def is_active(self) -> bool:
-        """docstring"""
+        """Returns true if and only if the mech is active.
+        
+        >>>mech = Mech((1,1),1,1,1)
+        >>>mech.is_active()
+        True
+        >>>mech.disable()
+        >>>mech.is_active()
+        False
+        >>>mech.enable()
+        >>>mech.is_active()
+        True
+        """
         return self._active_state
 
 class TankMech(Mech):
-    """docstring for TankMech"""
+    """A class that adapts the Mech class to create the class that initialises a tank object.
+    Inherits:
+        Entity
+        Mech
+    """
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -368,14 +551,22 @@ class TankMech(Mech):
     speed: int, 
     strength: int
     ) -> None:
-        """docstring"""
+        """Initialises an object from the TankMech class as well as all of it's children, inheriting certain attributes and methods from Mech.
+        Arguments:
+            position: a tuple with 2 ints that determines the starting row and column of the tank.
+            initial_health: the starting health of the tank.
+            speed: the number of squares the tank can traverse in one turn.
+            strength: the damage or healing power of the tank"""
         super().__init__(position, initial_health, speed, strength) # there is probably a better way of doing the below lines, but hell if I know right now
         self._entity_name = TANK_NAME
         self._entity_symbol = TANK_SYMBOL
         self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
         self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+
     def get_targets(self) -> list[tuple[int, int]]: #might be able to do this better. maybe remove this func and make Mech's GT work for all.
-        """docstring"""
+        """Returns the positions that would be attacked by the entity during a combat phase.
+        Returns:
+            A list containing all the positions that the entity will target when attacking."""
         targets = [(self._position[0], self._position[1]+tile_index) for tile_index in range(-5, 6) if tile_index != 0] #Source: w3schools
         return targets
 
@@ -394,6 +585,7 @@ class HealMech(Mech):
         self._entity_symbol = HEAL_SYMBOL
         self._entity_repr = f'{self._entity_name}({position}, {initial_health}, {speed}, {strength})'
         self._entity_str = f'{self._entity_symbol},{self._position[0]},{self._position[1]},{self._health},{self._speed},{self._strength}'
+    
     def get_strength(self) -> int:
         """docstring"""
         return -self._strength
@@ -458,8 +650,13 @@ class Scorpion(Enemy):
     ) -> None:
         """docstring"""
         #could do whole function in 1 line, but would probably be unreadable
-        possible_objective_healths = [entity.get_health() for entity in entities if entity.is_friendly()]
-        self._objective = entities[possible_objective_healths.index(max(possible_objective_healths))].get_position() #gets the index of the highest priority entity with the most health and and sets objective to its position
+        if entities:
+            print("entities:", entities)
+            for entity in entities:
+                print(f'{entity}: {entity.get_health()}')
+            possible_objective_healths = [entity.get_health() for entity in entities if entity.is_friendly()]
+            print(possible_objective_healths)
+            self._objective = entities[possible_objective_healths.index(max(possible_objective_healths))].get_position() #gets the index of the highest priority entity with the most health and and sets objective to its position
 
 class Firefly(Enemy):
     """docstring for FireFly"""
@@ -802,21 +999,21 @@ class ControlBar(tk.Frame):
         self._save_callback = save_callback
         self._load_callback = load_callback
         self._turn_callback = turn_callback
-        self.pack(side=tk.BOTTOM)
+        self.pack(side=tk.BOTTOM, fill=tk.X)
         # self.rowconfigure(1, weight=1)
         # self.columnconfigure(1, weight=1)
         padding = (GRID_SIZE+SIDEBAR_WIDTH)/7 #THIS IS WRONG METHOD OF DOING THIS, FIX
         self.grid_columnconfigure((0,1,2), weight=1, uniform="column", pad=padding)
         button_texts = [SAVE_TEXT, LOAD_TEXT, TURN_TEXT]
         button_commands = [save_callback, load_callback, turn_callback]
-        # for text, command in zip(button_texts, button_commands):
-        #     button = tk.Button(self, text=text, command=command)
-        #     button.pack(side=tk.LEFT, expand=tk.TRUE, padx=padding) #PADDING IS INCORRECT I THINK
+        for text, command in zip(button_texts, button_commands):
+            button = tk.Button(self, text=text, command=command)
+            button.pack(side=tk.LEFT, expand=tk.TRUE) #PADDING IS INCORRECT I THINK
         # button = tk.Button(self, text=TURN_TEXT, command=turn_callback)
         # button.pack(side=tk.LEFT, expand=tk.TRUE)
-        self._buttons = [tk.Button(self, text=button[0], command=button[1]) for button in zip(button_texts, button_commands)]
-        for i, button in enumerate(self._buttons):
-            button.grid(column=i, row=0)
+        # self._buttons = [tk.Button(self, text=button[0], command=button[1]) for button in zip(button_texts, button_commands)]
+        # for i, button in enumerate(self._buttons):
+        #     button.grid(column=i, row=0)
 
 
 
@@ -833,7 +1030,8 @@ class BreachView():
         self._root = root
         self._root.title(BANNER_TEXT)
         self._root.geometry(f'{GRID_SIZE+SIDEBAR_WIDTH}x{GRID_SIZE+BANNER_HEIGHT+CONTROL_BAR_HEIGHT}')
-        #root.geometry('750x625')
+        # self._root.geometry('750x625')
+        # self._root.geometry('625x750')
         banner = tk.Label(self._root, text=BANNER_TEXT, font=BANNER_FONT)
         banner.pack(fill=tk.X)
         self._game_grid = GameGrid(self._root, board_dims, (GRID_SIZE, GRID_SIZE))
@@ -1046,4 +1244,10 @@ if __name__ == "__main__":
     #LOAD GAME AS WELL AS PLAY AGAIN NOT REDRAWING
     #LOAD I/O ERROR STUFF
     #CONTROL BAR WIDGET WIDTH IS 657 WHEN IT SHOULD BE 750
+
     #ENEMIES ATTACKING THROUGH WALLS? ALLOWED OR NOT?
+    #REMOVE HEALTH CAP FROM ENTITIES?
+
+#REFACTORING
+    #ALL RANDOM COMMENTS
+    #ALL PARTS WHERE str() IS USED INSTEAD OF get_symbol()
