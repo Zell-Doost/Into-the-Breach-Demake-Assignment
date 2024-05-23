@@ -10,13 +10,12 @@ from typing import Optional, Callable
 
 # Write your classes and functions here
 
-###############################################################################
-#################################### MODEL ####################################
-###############################################################################
+################################################################################
+#################################### MODEL #####################################
+################################################################################
 
 class Tile():
     """A class that creates the attributes and methods for all tiles"""
-
     def __init__(self) -> None:
         """Initialises the attributes of the base tile class' objects"""
         self._tile_instance = f'{TILE_NAME}()'
@@ -90,14 +89,12 @@ class Tile():
         """
         return self._can_block
 
-
 class Ground(Tile):
     """A class that creates the tile object
 
     Inherits:
         Tile
     """
-
     def __init__(self) -> None:
         """Initialises the attributes for a ground object"""
         self._tile_instance = f'{GROUND_NAME}()'
@@ -105,14 +102,12 @@ class Ground(Tile):
         self._tile_name = GROUND_NAME
         self._can_block = False
 
-
 class Mountain(Tile):
     """A class that creates the mountain object
 
     Inherits:
         Tile
     """
-
     def __init__(self) -> None:
         """Initialises the attributes for a Mountain object"""
         self._tile_instance = f'{MOUNTAIN_NAME}()'
@@ -120,14 +115,12 @@ class Mountain(Tile):
         self._tile_name = MOUNTAIN_NAME
         self._can_block = True
    
-
 class Building(Tile):
     """A class that creates the building object with health
 
     Inherits:
         Tile
     """
-
     def __init__(self, initial_health: int) -> None:
         """Initialises the attributes for a Building object
 
@@ -190,10 +183,8 @@ class Building(Tile):
         self._tile_symbol = str(self._health)
         self._tile_instance = f'{BUILDING_NAME}({self._health})'
 
-
 class Board():
     """A class that creates the board that will be in use during gameplay"""
-
     def __init__(self, board: list[list[str]]) -> None:
         """Initialises the attributes for a Board object
 
@@ -305,18 +296,16 @@ class Board():
         >>>board.get_buildings()
         {(0, 1): Building(4), (1, 0): Building(6)}
         """
-        buildings = dict()
+        building_positionsionary = dict()
         for row_i, row in enumerate(self._board):
-            buildings.update({(row_i, column_i): self.get_tile(
+            building_positionsionary.update({(row_i, column_i): self.get_tile(
                 (row_i, column_i)) for column_i, column in enumerate(row) 
                     if column.isdigit()})
-        return buildings
-
+        return building_positionsionary
 
 class Entity():
     """A class that creates the base for all entity objects, which include 
         mechs and enemies"""
-
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -341,6 +330,28 @@ class Entity():
         self._entity_name = ENTITY_NAME
         self._entity_symbol = ENTITY_SYMBOL
         self._symbol_instance_updater()
+    
+    def _symbol_instance_updater(self):
+        """Updates the entities variables for __repr__ and __str__, to be used 
+            whenever the attributes of an entity change.
+        
+        >>>e1 = Entitiy((1, 1), 6, 3, 3)
+        >>>e1
+        Entity((1, 1), 6, 3, 3)
+        >>>str(tank)
+        'E,1,1,6,3,3'
+        e1.damage(4) #Has _symbol_instance_updater inside damage function
+        >>>e1
+        Entity((1, 1), 2, 3, 3)
+        >>>str(e1)
+        'E,1,1,2,3,3'
+        """
+        self._entity_stats = f'''{self._entity_symbol},{
+            self._position[0]},{self._position[1]},{self._health},{
+            self._speed},{self._strength}'''
+        self._entity_instance = f'''{self._entity_name}({
+            self._position}, {self._health}, {self._speed}, {
+            self._strength})'''
 
     def __repr__(self) -> str:
         """Gets a machine readable string that could be used to construct an 
@@ -368,28 +379,6 @@ class Entity():
         'E,0,0,1,1,1'
         """
         return self._entity_stats
-
-    def _symbol_instance_updater(self):
-        """Updates the entities variables for __repr__ and __str__, to be used 
-            whenever the attributes of an entity change.
-        
-        >>>e1 = Entitiy((1, 1), 6, 3, 3)
-        >>>e1
-        Entity((1, 1), 6, 3, 3)
-        >>>str(tank)
-        'E,1,1,6,3,3'
-        e1.damage(4) #Has _str_repr_updater inside damage function
-        >>>e1
-        Entity((1, 1), 2, 3, 3)
-        >>>str(e1)
-        'E,1,1,2,3,3'
-        """
-        self._entity_stats = f'''{self._entity_symbol},{
-            self._position[0]},{self._position[1]},{self._health},{
-            self._speed},{self._strength}'''
-        self._entity_instance = f'''{self._entity_name}({
-            self._position}, {self._health}, {self._speed}, {
-            self._strength})'''
 
     def get_symbol(self) -> str:
         """Gets the character that represents the entity type.
@@ -628,6 +617,7 @@ class Entity():
         """
         if self.get_strength() > 0 or entity.is_friendly():
             entity.damage(self.get_strength())
+        print(self)
         
 
 class Mech(Entity):
@@ -637,7 +627,6 @@ class Mech(Entity):
     Inherits:
         Entity
     """
-
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -688,7 +677,6 @@ class Mech(Entity):
         """
         return self._active_state
 
-
 class TankMech(Mech):
     """A class that adapts the Mech class to create the class that 
         initialises a tank mech object.
@@ -697,7 +685,6 @@ class TankMech(Mech):
         Entity
         Mech
     """
-
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -721,7 +708,6 @@ class TankMech(Mech):
         self._entity_symbol = TANK_SYMBOL
         self._symbol_instance_updater()
 
-
 class HealMech(Mech):
     """A class that adapts the Mech class to create the class that 
         initialises a heal mech object.
@@ -730,7 +716,6 @@ class HealMech(Mech):
         Entity
         Mech
     """
-
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -754,7 +739,6 @@ class HealMech(Mech):
         self._entity_symbol = HEAL_SYMBOL
         self._symbol_instance_updater()
 
-
 class Enemy(Entity):
     """A class that adapts the Entity class to create the base for all 
         non-friendly entities, which are scorpions and fireflies.
@@ -762,7 +746,6 @@ class Enemy(Entity):
     Inherits:
         Entity
     """
-
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -839,16 +822,14 @@ class Enemy(Entity):
             possible_objective_healths = [entity.get_health() 
                 for entity in entities if entity.is_friendly()]
             if possible_objective_healths:
-                #gets the index of the highest priority entity with the most 
-                #health and and sets objective to its position
                 objective = entities[possible_objective_healths.index(
-                    max(possible_objective_healths))].get_position()
+                    max(possible_objective_healths))].get_position() #gets the index of the highest priority entity with the most health and and sets objective to its position
         #Firefly targets, being the lowest health building, if there is a tie, 
         #   target the right most, bottom most.
         elif self.get_symbol() == FIREFLY_SYMBOL:
             possible_objectives = [(building_position, 
-                buildings[building_position]) for building_position in 
-                buildings if not buildings[building_position].is_destroyed()]
+                buildings[building_position]) for building_position in buildings
+                if not buildings[building_position].is_destroyed()]
             possible_objective_healths = [int(str(healths[1])) 
                 for healths in possible_objectives]
             possible_objectives = [objective[0] for objective 
@@ -873,7 +854,6 @@ class Scorpion(Enemy):
         Entity
         Enemy
     """
-
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -897,7 +877,6 @@ class Scorpion(Enemy):
         self._symbol_instance_updater()
         self._active_state = True
 
-
 class Firefly(Enemy):
     """A class that adapts the Enemy class to create the class that 
         initialises a firefly object
@@ -906,7 +885,6 @@ class Firefly(Enemy):
         Entity
         Enemy
     """
-
     def __init__(
     self, 
     position: tuple[int, int], 
@@ -930,11 +908,9 @@ class Firefly(Enemy):
         self._symbol_instance_updater()
         self._active_state = True
     
-
 class BreachModel():
     """A class that creates the object for the model, which determines 
         all of the logic within the game."""
-
     def __init__(self, board: Board, entities: list[Entity]) -> None:
         """Initialises the model's board and entities to adapt and change.
         
@@ -967,8 +943,7 @@ class BreachModel():
             , 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', 
             '2', ' ', ' ', ' ', 'M', 'M', 'M', 'M', 'M'], ['M', '2', ' ', ' ', 
             ' ', ' ', ' ', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', 
-            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']
-            ])
+            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']])
         >>>entities = [TankMech((1, 1), 5, 3, 3), TankMech((1, 2), 3, 3, 3), 
             HealMech((1, 3), 2, 3, 2), Scorpion((8, 8), 3, 3, 2), 
             Firefly((8, 7), 2, 2, 1), Firefly((7, 6), 1, 1, 1)]
@@ -978,11 +953,11 @@ class BreachModel():
             \nM2   MMMMM\nM2     MMM\nM        M\nMMMMMMMMMM\n\nT,1,1,5,3,3\n
             T,1,2,3,3,3\nH,1,3,2,3,2\nS,8,8,3,3,2\nF,8,7,2,2,1\nF,7,6,1,1,1'
         """
-        model_elements = f'{str(self._board)}\n'
+        string_representation = f'{str(self._board)}\n'
         for entity in self._entities:
-            model_elements += "\n"
-            model_elements += str(entity)
-        return model_elements
+            string_representation += "\n"
+            string_representation += str(entity)
+        return string_representation
 
     def get_board(self) -> Board:
         """Gets the board object of the model
@@ -997,8 +972,7 @@ class BreachModel():
             , 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', 
             '2', ' ', ' ', ' ', 'M', 'M', 'M', 'M', 'M'], ['M', '2', ' ', ' ', 
             ' ', ' ', ' ', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', 
-            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']
-            ])
+            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']])
         >>>entities = [TankMech((1, 1), 5, 3, 3), TankMech((1, 2), 3, 3, 3), 
             HealMech((1, 3), 2, 3, 2), Scorpion((8, 8), 3, 3, 2), 
             Firefly((8, 7), 2, 2, 1), Firefly((7, 6), 1, 1, 1)]
@@ -1029,8 +1003,7 @@ class BreachModel():
             , 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', 
             '2', ' ', ' ', ' ', 'M', 'M', 'M', 'M', 'M'], ['M', '2', ' ', ' ', 
             ' ', ' ', ' ', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', 
-            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']
-            ])
+            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']])
         >>>entities = [TankMech((1, 1), 5, 3, 3), TankMech((1, 2), 3, 3, 3), 
             HealMech((1, 3), 2, 3, 2), Scorpion((8, 8), 3, 3, 2), 
             Firefly((8, 7), 2, 2, 1), Firefly((7, 6), 1, 1, 1)]
@@ -1060,11 +1033,11 @@ class BreachModel():
         >>>model._building_alive_check()
         False
         """
-        buildings = [self.get_board().get_buildings()[building_position] 
+        building_positions = [self.get_board().get_buildings()[building_position] 
             for building_position in self.get_board().get_buildings() 
             if not self.get_board().get_buildings()[
                 building_position].is_destroyed()]
-        return bool(len(buildings) > 0)
+        return bool(len(building_positions) > 0)
 
     def has_won(self) -> bool:
         """Returns True iff the game is in a win state according to the game 
@@ -1128,9 +1101,9 @@ class BreachModel():
         >>>model.entity_positions
         {(0, 0): TankMech((0,0),1,1,1), (0, 1): Scopion((0,1),1,1,1)}
         """
-        entity_positions = {entity.get_position(): entity 
+        entity_position_dict = {entity.get_position(): entity 
             for entity in self._entities}
-        return entity_positions
+        return entity_position_dict
 
     def get_valid_movement_positions(self, 
     entity: Entity
@@ -1154,8 +1127,7 @@ class BreachModel():
             , 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', 
             '2', ' ', ' ', ' ', 'M', 'M', 'M', 'M', 'M'], ['M', '2', ' ', ' ', 
             ' ', ' ', ' ', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', 
-            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']
-            ])
+            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']])
         >>>entities = [TankMech((1, 1), 5, 3, 3), TankMech((1, 2), 3, 3, 3), 
             HealMech((1, 3), 2, 3, 2), Scorpion((8, 8), 3, 3, 2), 
             Firefly((8, 7), 2, 2, 1), Firefly((7, 6), 1, 1, 1)]
@@ -1191,8 +1163,7 @@ class BreachModel():
             , 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', 
             '2', ' ', ' ', ' ', 'M', 'M', 'M', 'M', 'M'], ['M', '2', ' ', ' ', 
             ' ', ' ', ' ', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', 
-            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']
-            ])
+            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']])
         >>>entities = [TankMech((1, 1), 5, 3, 3), TankMech((1, 2), 3, 3, 3), 
             HealMech((1, 3), 2, 3, 2), Scorpion((8, 8), 3, 3, 2), 
             Firefly((8, 7), 2, 2, 1), Firefly((7, 6), 1, 1, 1)]
@@ -1289,8 +1260,7 @@ class BreachModel():
             , 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', 
             '2', ' ', ' ', ' ', 'M', 'M', 'M', 'M', 'M'], ['M', '2', ' ', ' ', 
             ' ', ' ', ' ', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', 
-            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']
-            ])
+            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']])
         >>>entities = [TankMech((1, 1), 5, 3, 3), Scorpion((8, 8), 3, 3, 2), 
             Firefly((7, 6), 1, 1, 1)]
         >>>model = BreachModel(board, entities)
@@ -1352,7 +1322,7 @@ class BreachModel():
         '2'
         """
         entity_positions = self.entity_positions()
-        buildings = self._board.get_buildings()
+        building_positions = self._board.get_buildings()
         targets = entity.get_targets()
         #Attack entities
         for target in targets:
@@ -1364,8 +1334,8 @@ class BreachModel():
         self._entities = entities
         #Attack buildings
         for target in targets:
-            if target in buildings and entity.is_alive():
-                buildings[target].damage(entity.get_strength())
+            if target in building_positions and entity.is_alive():
+                building_positions[target].damage(entity.get_strength())
 
     def end_turn(self) -> None:
         """Executes the attack and enemy movement phases, then sets all mechs 
@@ -1378,8 +1348,7 @@ class BreachModel():
             , 'M'], ['M', '2', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'M'], ['M', 
             '2', ' ', ' ', ' ', 'M', 'M', 'M', 'M', 'M'], ['M', '2', ' ', ' ', 
             ' ', ' ', ' ', 'M', 'M', 'M'], ['M', ' ', ' ', ' ', ' ', ' ', ' ', 
-            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']
-            ])
+            ' ', ' ', 'M'], ['M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M', 'M']])
         >>>entities = [TankMech((1, 1), 5, 3, 3), TankMech((1, 2), 3, 3, 3), 
             HealMech((1, 3), 2, 3, 2), Scorpion((8, 8), 3, 3, 2), 
             Firefly((8, 7), 2, 2, 1), Firefly((7, 6), 1, 1, 1)]
@@ -1408,9 +1377,9 @@ class BreachModel():
         # self._entities = new_mechs + new_enemies
         self._is_move_made = False
 
-###############################################################################
-##################################### View ####################################
-###############################################################################
+################################################################################
+##################################### View #####################################
+################################################################################
 
 class GameGrid(AbstractGrid):
     """The class that creates the object for the grid that the game will be 
@@ -1421,46 +1390,12 @@ class GameGrid(AbstractGrid):
         tk.Canvas
         AbstractGrid
     """
-
-    _TILE_TO_COLOUR = {MOUNTAIN_SYMBOL: MOUNTAIN_COLOR, 
-        GROUND_SYMBOL: GROUND_COLOR}
-    _ENTITY_TO_DISPLAY = {TANK_SYMBOL: TANK_DISPLAY, HEAL_SYMBOL: HEAL_DISPLAY,
-        SCORPION_SYMBOL: SCORPION_DISPLAY, FIREFLY_SYMBOL: FIREFLY_DISPLAY}
-
-    def _draw_tile(self, board: Board, position: tuple[int, int]) -> None:
-        """Draws the display colour for the tile from the board on the grid in 
-            the given position.
-        
-        Arguments:
-            board: The board of the current game state.
-            position: The position of the tile in the grid.
-        """
-        if str(board.get_tile(position)).isdigit():
-            if board.get_tile(position).is_destroyed():
-                self.color_cell(position, DESTROYED_COLOR)
-            else:
-                self.color_cell(position, BUILDING_COLOR)
-        else:
-            self.color_cell(position, self._TILE_TO_COLOUR[
-                str(board.get_tile(position))])
-
-    def _draw_entity(self, entity: Entity, position: tuple[int, int]) -> None:
-        """Draws the display symbol for the entity from the entity's object on 
-            the grid in the given position.
-
-        Arguments:
-            entity: The entity that needs to be dsiplayed in the GameGrid.
-            position: The position of the entity in the grid.
-        """
-        self.annotate_position(position, 
-            self._ENTITY_TO_DISPLAY[entity.get_symbol()], font=ENTITY_FONT)
-
-    def redraw(self,
-        board: Board, 
-        entities: list[Entity], 
-        highlighted: list[tuple[int, int]] = None, 
-        movement: bool = False
-        ) -> None:
+    def redraw(self, 
+    board: Board, 
+    entities: list[Entity], 
+    highlighted: list[tuple[int, int]] = None, 
+    movement: bool = False
+    ) -> None:
         """Clears the game grid, then redraws it according to the provided 
             information. The grid is drawn on the GameGrid instance itself. 
             Destroyed buildings are colored diferently from buildings that are 
@@ -1499,20 +1434,40 @@ class GameGrid(AbstractGrid):
                         self.color_cell(position, MOVE_COLOR)
                     else:
                         self.color_cell(position, ATTACK_COLOR)
-                else:
-                    self._draw_tile(board, position)
+
+                #Check for tiles and buildings
+                elif str(board.get_tile(position)) == MOUNTAIN_SYMBOL:
+                    self.color_cell(position, MOUNTAIN_COLOR)
+                elif str(board.get_tile(position)) == GROUND_SYMBOL:
+                    self.color_cell(position, GROUND_COLOR)
+                elif str(board.get_tile(position)).isdigit():
+                    if board.get_tile(position).is_destroyed():
+                        self.color_cell(position, DESTROYED_COLOR)
+                    else:
+                        self.color_cell(position, BUILDING_COLOR)
                 #Need to check for building again so annotation can be outside 
                 #the last if statement and be drawn along with highlighted 
                 #squares.
-                if (str(board.get_tile(position)).isdigit() and 
+                if (str(board.get_tile(position)).isdigit() and
                     not board.get_tile(position).is_destroyed()):
                     self.annotate_position(position, 
                         str(board.get_tile(position)), font=ENTITY_FONT)
                         
                 #Check for entities
                 if position in self._entity_positions:
-                    entity = self._entity_positions[position]
-                    self._draw_entity(entity, position)
+                    entity_sym = self._entity_positions[position].get_symbol()
+                    if entity_sym == TANK_SYMBOL:
+                        self.annotate_position(position, TANK_DISPLAY, 
+                            font=ENTITY_FONT)
+                    elif entity_sym == HEAL_SYMBOL:
+                        self.annotate_position(position, HEAL_DISPLAY, 
+                            font=ENTITY_FONT)
+                    elif entity_sym == SCORPION_SYMBOL:
+                        self.annotate_position(position, SCORPION_DISPLAY, 
+                            font=ENTITY_FONT)
+                    elif entity_sym == FIREFLY_SYMBOL:
+                        self.annotate_position(position, FIREFLY_DISPLAY, 
+                            font=ENTITY_FONT)
                 
     def bind_click_callback(self, 
     click_callback: Callable[[tuple[int, int]], None]
@@ -1533,7 +1488,6 @@ class GameGrid(AbstractGrid):
         self.bind('<Button-1>', position_action)
         self.bind('<Button-2>', position_action)
 
-
 class SideBar(AbstractGrid):
     """The class that creates the object for the section of the screen on the 
         right, where all of the statistics of each living entity is displayed. 
@@ -1545,19 +1499,25 @@ class SideBar(AbstractGrid):
         tk.Canvas
         AbstractGrid
     """
+    # def __init__(self, 
+    # master: tk.Widget, 
+    # dimensions: tuple[int, int], 
+    # size: tuple[int, int]
+    # ) -> None:
+    #     """Instantiates a SideBar with the specified dimensions and size.
 
-    _ENTITY_TO_DISPLAY = {TANK_SYMBOL: TANK_DISPLAY, HEAL_SYMBOL: HEAL_DISPLAY,
-        SCORPION_SYMBOL: SCORPION_DISPLAY, FIREFLY_SYMBOL: FIREFLY_DISPLAY}
-    
-    def _get_entity_display(self, entity: Entity) -> str:
-        """Gets the display symbol for the entity from the entity's object.
-
-        Arguments:
-            entity: The entity that needs to be dsiplayed in the SideBar.
-        Returns:
-            The entity's display symbol.
-        """
-        return self._ENTITY_TO_DISPLAY[entity.get_symbol()]
+    #     Arguments:
+    #         master: The full tkinter window that the game is running on.
+    #         dimensions: The initial number of rows and columns the side bar 
+    #             must habe to fit all of the information while being evenly 
+    #             spaced.
+    #         size: The horizontal and vertical size of the side bar within the 
+    #             master window in pixels.
+    #     """
+    #     super().__init__(master, dimensions, size)
+        #NEXT 2 LINES DECLARED IN ABSTRACT GRID, SO FIX THIS
+        # self._dimensions = dimensions
+        # self._size = size
 
     def display(self, entities: list[Entity]) -> None:
         """Clears the side bar, then redraws the header followed by the 
@@ -1576,14 +1536,21 @@ class SideBar(AbstractGrid):
             The given list of entities will be sorted in descending priority 
                 order.
         """
-        self.pack(side=tk.RIGHT, anchor=tk.N)
         self.set_dimensions((len(entities)+1, 4))
+        self.pack(side=tk.LEFT, anchor=tk.N)
         self.clear()
         display = None
         for column, heading in enumerate(SIDEBAR_HEADINGS):
             self.annotate_position((0, column), heading, font=SIDEBAR_FONT)
         for row, entity in enumerate(entities):
-            display = self._get_entity_display(entity)
+            if entity.get_symbol() == TANK_SYMBOL:
+                display = TANK_DISPLAY
+            elif entity.get_symbol() == HEAL_SYMBOL:
+                display = HEAL_DISPLAY
+            elif entity.get_symbol() == SCORPION_SYMBOL:
+                display = SCORPION_DISPLAY
+            elif entity.get_symbol() == FIREFLY_SYMBOL:
+                display = FIREFLY_DISPLAY
             self.annotate_position((row+1, 0), display, font=SIDEBAR_FONT)
             position = entity.get_position()
             display_position = f'({position[0]}, {position[1]})'
@@ -1594,7 +1561,6 @@ class SideBar(AbstractGrid):
             self.annotate_position((row+1, 3), entity.get_strength(), 
                 font=SIDEBAR_FONT)
 
-
 class ControlBar(tk.Frame):
     """The class that creates the control bar object. This object will be on 
         the bottom of the screen and only contains three buttons, which are 
@@ -1604,7 +1570,6 @@ class ControlBar(tk.Frame):
     Inherits:
         tk.Frame
     """
-
     def __init__(self, 
     master: tk.Widget, 
     save_callback: Optional[Callable[[], None]] = None, 
@@ -1638,7 +1603,6 @@ class ControlBar(tk.Frame):
             button = tk.Button(self, text=text, command=command)
             button.pack(side=tk.LEFT, expand=tk.TRUE)
 
-
 class BreachView():
     """The class that creates the breach view object. This object provides a 
         wrapper for all of the other GUI elements from the view. The top is 
@@ -1647,7 +1611,6 @@ class BreachView():
         ControlBar, which spans the width of the GameGrid and the SideBar put 
         together.
     """
-
     def __init__(self, 
     root: tk.Tk, 
     board_dims: tuple[int, int], 
@@ -1657,8 +1620,7 @@ class BreachView():
     ) -> None:
         """Instantiates view. Sets title of the given root window, and 
             instantiates all child components. The buttons on the instantiated 
-            CommandBar receive the given callbacks as their respective 
-            commands.
+            CommandBar receive the given callbacks as their respective commands.
 
         Arguements:
             root: The root window that holds all of the GUI.
@@ -1715,15 +1677,14 @@ class BreachView():
             highlighted=highlighted, movement=movement)
         self._side_bar.display(entities)
 
-###############################################################################
-################################## Controller #################################
-###############################################################################
+################################################################################
+################################## Controller ##################################
+################################################################################
 
 class IntoTheBreach():
     """The controller class for the overall game. Responsible for creating and 
         maintaining instances of the model and view classes, event handling, 
         and facilitating communi- cation between the model and view classes."""
-
     def __init__(self, root: tk.Tk, game_file: str) -> None:
         """Instantiates the controller. Creates instances of BreachModel and 
             BreachView, and redraws display to show the initial game state.
@@ -1803,12 +1764,10 @@ class IntoTheBreach():
                     if is_on_board: #take board
                         board.append([char for char in line if char != '\n'])
                     elif line != '\n': #take entities
-                        raw_stat_data = line[2:].split(',')
-                        stats = [
-                            (int(raw_stat_data[0]), int(raw_stat_data[1])), 
-                            int(raw_stat_data[2]), int(raw_stat_data[3]), 
-                            int(raw_stat_data[4].replace('\n', ''))
-                            ]
+                        stats_str = line[2:].split(',')
+                        stats = [(int(stats_str[0]), int(stats_str[1])), 
+                            int(stats_str[2]), int(stats_str[3]), 
+                            int(stats_str[4].replace('\n', ''))]
                         if line[0] == TANK_SYMBOL:
                             entities.append(TankMech(stats[0], stats[1], 
                                 stats[2], stats[3]))
@@ -1931,7 +1890,6 @@ class IntoTheBreach():
             self.set_focussed_entity(None)
         self.redraw()
 
-
 def play_game(root: tk.Tk, file_path: str) -> None:
     """The function that runs the game. It should construct the controller 
         instance and ensure the root window stays open listening for events.
@@ -1943,7 +1901,6 @@ def play_game(root: tk.Tk, file_path: str) -> None:
     IntoTheBreach(root, file_path)
     root.mainloop()
 
-
 def main() -> None:
     """The main function. Runs the code. Constructs the root tk.TK instance 
         and calls the play_game function with the initial loaded game state.
@@ -1951,6 +1908,16 @@ def main() -> None:
     root = tk.Tk()
     play_game(root, 'levels/level1.txt')
 
-
 if __name__ == "__main__":
     main()
+
+
+#NEED TO FIX:
+
+    #CLOSE WINDOW AFTER IO ERROR?
+    #ENEMIES ATTACKING THROUGH WALLS? ALLOWED OR NOT?
+    #REMOVE HEALTH CAP FROM ENTITIES?
+
+#REFACTORING
+    #ALL RANDOM COMMENTS
+    #ALL PARTS WHERE str() IS USED INSTEAD OF get_symbol()
