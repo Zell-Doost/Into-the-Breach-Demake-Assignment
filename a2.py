@@ -307,10 +307,10 @@ class Board():
         """
         buildings = dict()
         for row_i, row in enumerate(self._board):
-            buildings.update({(row_i, column_i): self.get_tile(
-                (row_i, column_i)) for column_i, column in enumerate(row) 
-                    if column.isdigit()}
-            )
+            buildings.update({(row_i, column_i): 
+                              self.get_tile((row_i, column_i)) 
+                              for column_i, column in enumerate(row) 
+                              if column.isdigit()})
         return buildings
 
 
